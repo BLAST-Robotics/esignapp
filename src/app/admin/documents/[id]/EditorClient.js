@@ -76,7 +76,7 @@ const VALIDATION_OPTIONS = [
   { value: 'min2', label: 'Min 2 characters' },
 ];
 
-function DraggableField({ field, scale, selected, onSelect, onUpdate }) {
+function DraggableField({ field, scale, selected, onSelect, onUpdate, onEdit }) {
   const elRef = useRef(null);
   const dragRef = useRef(null);
   const c = FIELD_COLORS[field.field_type] || FIELD_COLORS.other;
@@ -184,6 +184,10 @@ function DraggableField({ field, scale, selected, onSelect, onUpdate }) {
       ref={elRef}
       data-field-id={field.id}
       onPointerDown={() => onSelect(field.id)}
+      onDoubleClick={(e) => {
+        e.preventDefault();
+        onEdit?.(field.id);
+      }}
       style={{
         position: 'absolute',
         left: `${(field.x || 0) * scale}px`,
@@ -527,25 +531,44 @@ function CtxFieldEditor({
             </div>
             <div className="grid grid-cols-2 gap-2">
               {f.field_type === 'signature' && (
-                <div>
-                  <label
-                    htmlFor="field-default-method"
-                    className="block text-[10px] text-neutral-500 mb-0.5 font-medium"
-                  >
-                    Default Method
-                  </label>
-                  <select
-                    id="field-default-method"
-                    value={f.default_method || 'draw'}
-                    onChange={(e) => updateField({ ...f, default_method: e.target.value })}
-                    className="w-full px-2 py-1.5 bg-neutral-800 border border-neutral-700 rounded-lg text-xs text-neutral-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    disabled={!canEdit}
-                  >
-                    <option value="draw">Draw on canvas</option>
-                    <option value="auto">Use full name (auto)</option>
-                    <option value="type">Type custom text</option>
-                  </select>
-                </div>
+                <>
+                  <div>
+                    <label
+                      htmlFor="field-default-method"
+                      className="block text-[10px] text-neutral-500 mb-0.5 font-medium"
+                    >
+                      Default Method
+                    </label>
+                    <select
+                      id="field-default-method"
+                      value={f.default_method || 'draw'}
+                      onChange={(e) => updateField({ ...f, default_method: e.target.value })}
+                      className="w-full px-2 py-1.5 bg-neutral-800 border border-neutral-700 rounded-lg text-xs text-neutral-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      disabled={!canEdit}
+                    >
+                      <option value="draw">Draw on canvas</option>
+                      <option value="auto">Use full name (auto)</option>
+                      <option value="type">Type custom text</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="field-signature-name"
+                      className="block text-[10px] text-neutral-500 mb-0.5 font-medium"
+                    >
+                      Auto-sign name
+                    </label>
+                    <input
+                      id="field-signature-name"
+                      type="text"
+                      value={f.signature_name || ''}
+                      onChange={(e) => updateField({ ...f, signature_name: e.target.value })}
+                      placeholder="Leave blank to use signer's name"
+                      className="w-full px-2 py-1.5 bg-neutral-800 border border-neutral-700 rounded-lg text-xs text-neutral-200 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-neutral-500"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                </>
               )}
               {f.field_type === 'date' && (
                 <div>
@@ -1264,6 +1287,7 @@ export default function DocumentEditor({ documentId }) {
                                 selected={selectedId === f.id}
                                 onSelect={setSelectedId}
                                 onUpdate={updateField}
+                                onEdit={openFieldEdit}
                               />
                             ))}
                           </section>

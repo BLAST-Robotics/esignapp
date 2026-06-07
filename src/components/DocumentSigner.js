@@ -207,7 +207,7 @@ function FieldOverlay({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') onActivate(f.id);
               }}
-              className={`w-full text-left px-2 py-1 rounded-lg transition-all duration-200 cursor-pointer ${fieldErrors?.[f.id] ? 'bg-red-50 dark:bg-red-900/30 border-2 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200' : isFilled ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-neutral-100' : 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-dashed border-yellow-300 dark:border-yellow-700 hover:border-yellow-500 text-neutral-400'}`}
+              className={`w-full text-left px-2 py-1 rounded-lg transition-all duration-200 cursor-pointer ${fieldErrors?.[f.id] ? 'bg-red-900/30 border-2 border-red-700 text-red-300' : isFilled ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-neutral-100' : 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-dashed border-yellow-300 dark:border-yellow-700 hover:border-yellow-500 text-neutral-400'}`}
               style={{ fontSize: `${Math.max(12, fs * scale)}px` }}
             >
               {isFilled ? val : f.label || renderer.placeholder}
@@ -878,6 +878,7 @@ export default function DocumentSigner({ documentId }) {
             .map((f) => ({ id: f.id, label: f.label, value: fieldValues[f.id] || '' }))
             .filter((n) => n.value)}
           defaultMethod={fields.find((f) => f.id === sigPickerFieldId)?.default_method}
+          signatureName={fields.find((f) => f.id === sigPickerFieldId)?.signature_name}
           onSignature={handleSignature}
           onClose={() => {
             setSigPickerOpen(false);

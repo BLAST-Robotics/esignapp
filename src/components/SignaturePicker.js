@@ -31,13 +31,13 @@ function renderCursiveToCanvas(text, width = 600, height = 160) {
   return canvas.toDataURL('image/png');
 }
 
-export default function SignaturePicker({ nameOptions, onSignature, onClose, defaultMethod }) {
+export default function SignaturePicker({ nameOptions, onSignature, onClose, defaultMethod, signatureName }) {
   const defaultName = nameOptions?.[0]?.value || '';
-  const initialCursive = defaultMethod === 'type' ? '' : defaultName || '';
+  const initialCursive = defaultMethod === 'type' ? '' : (defaultMethod === 'auto' ? (signatureName || defaultName) : '');
   const [mode, setMode] = useState(() => {
     if (defaultMethod === 'draw') return 'draw';
     if (defaultMethod === 'auto' || defaultMethod === 'type') return 'cursive';
-    return 'choose';
+    return 'draw';
   });
   const [cursiveText, setCursiveText] = useState(initialCursive);
   const [selectedNameId, setSelectedNameId] = useState(nameOptions?.[0]?.id || null);
@@ -93,11 +93,11 @@ export default function SignaturePicker({ nameOptions, onSignature, onClose, def
   }, [cursiveText, onSignature]);
 
   return (
-    <button
-      type="button"
+    <div
+      role="presentation"
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4 animate-in fade-in duration-200"
       onClick={onClose}
-      onKeyDown={onClose}
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
     >
       <div
         className="bg-white dark:bg-neutral-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in slide-in-from-bottom-8 duration-300 border border-black/5"
@@ -132,6 +132,24 @@ export default function SignaturePicker({ nameOptions, onSignature, onClose, def
               {mode === 'draw' && 'Draw Your Signature'}
               {mode === 'cursive' && 'Type Your Signature'}
             </h3>
+            {mode === 'draw' && (
+              <button
+                type="button"
+                onClick={() => setMode('choose')}
+                className="text-[11px] text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 underline underline-offset-2 transition-colors"
+              >
+                I can't draw
+              </button>
+            )}
+            {mode === 'cursive' && (
+              <button
+                type="button"
+                onClick={() => setMode('draw')}
+                className="text-[11px] text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 underline underline-offset-2 transition-colors"
+              >
+                Switch to drawing
+              </button>
+            )}
           </div>
           <button
             type="button"
@@ -176,10 +194,10 @@ export default function SignaturePicker({ nameOptions, onSignature, onClose, def
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-gray-900 dark:text-neutral-100">Draw Signature</div>
-                <div className="text-xs text-gray-400 dark:text-neutral-500 mt-0.5">
-                  Use your finger or mouse to sign
-                </div>
+              <div className="text-sm font-medium text-gray-900 dark:text-neutral-100">Draw Signature</div>
+              <div className="text-xs text-gray-400 dark:text-neutral-500 mt-0.5">
+                Use your finger, mouse, or stylus to draw your signature naturally
+              </div>
               </div>
               <svg
                 aria-hidden="true"
@@ -219,10 +237,10 @@ export default function SignaturePicker({ nameOptions, onSignature, onClose, def
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-gray-900 dark:text-neutral-100">Use Full Name</div>
-                <div className="text-xs text-gray-400 dark:text-neutral-500 mt-0.5">
-                  Auto-render a name in cursive style
-                </div>
+              <div className="text-sm font-medium text-gray-900 dark:text-neutral-100">Use Full Name</div>
+              <div className="text-xs text-gray-400 dark:text-neutral-500 mt-0.5">
+                Auto-render your name in cursive handwriting — no drawing needed
+              </div>
               </div>
               <svg
                 aria-hidden="true"
@@ -261,10 +279,10 @@ export default function SignaturePicker({ nameOptions, onSignature, onClose, def
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-gray-900 dark:text-neutral-100">Type Your Signature</div>
-                <div className="text-xs text-gray-400 dark:text-neutral-500 mt-0.5">
-                  Type any text and see it in cursive
-                </div>
+              <div className="text-sm font-medium text-gray-900 dark:text-neutral-100">Type Your Signature</div>
+              <div className="text-xs text-gray-400 dark:text-neutral-500 mt-0.5">
+                Type any name or text and see it rendered in cursive style
+              </div>
               </div>
               <svg
                 aria-hidden="true"
@@ -416,6 +434,6 @@ export default function SignaturePicker({ nameOptions, onSignature, onClose, def
           )}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
