@@ -69,6 +69,8 @@ src/
 
 ```bash
 npm install
+# or
+bun install
 ```
 
 ## Setup
@@ -77,6 +79,8 @@ Copy `.env.example` to `.env.local`:
 
 ```env
 ADMIN_PASSWORD=admin
+SEED_ADMIN_EMAIL=hello@keystonestemai.org
+SEED_ADMIN_PASSWORD=your_secure_password
 POSTGRES_URL=postgres://user:password@host:5432/database
 ```
 
@@ -84,24 +88,24 @@ The app auto-detects Postgres from any of these env vars (first found wins): `PO
 
 - **Postgres** is optional — local development uses JSON files in `.data/`
 - **ADMIN_PASSWORD** enables a dev-mode login override (any email + this password)
-
-A seeded admin user is created on first run:
-- Email: `hello@keystonestemai.org`
-- Password: `Keystone#2026$`
+- **SEED_ADMIN_EMAIL** / **SEED_ADMIN_PASSWORD** — creates an admin user on first run (omit to skip seeding)
 
 ## Run
 
 ```bash
 npm run dev
+# or
+bun run dev
 ```
 
-Open `http://localhost:80/admin`
+Open `http://localhost:3000/admin`
 
 ## Build
 
 ```bash
-npm run build
-npm start
+npm run build && npm start
+# or
+bun run next build && bun run next start
 ```
 
 ## Deploy to Vercel
@@ -186,6 +190,19 @@ Two modes, auto-detected by the `POSTGRES_URL` environment variable:
 ## Stack
 
 Next.js 16 (App Router, Turbopack), Tailwind CSS v4, react-pdf 10.4.1, pdf-lib 1.17.1, recharts 3.8.1, react-signature-canvas 1.1.0, @vercel/postgres 0.10.0, archiver 8.0.0, nodemailer 6.10.0
+
+## Roadmap
+
+- **Audit log** — track field edits, permission changes, signer IPs with timestamps
+- **Email notifications** — notify document owner on each signature submission
+- **Template library** — save field layouts as reusable templates
+- **Bulk send** — send the same document to multiple recipients with unique links
+- **Webhook support** — POST signed data to external endpoints on completion
+- **OAuth login** — Google / GitHub / Microsoft authentication
+- **PDF form import** — auto-detect AcroForm fields from uploaded PDFs
+- **White-label branding** — custom logo, colors, domain, email sender
+- **API tokens** — programmatic document creation and signature requests
+- **Offline signing** — PWA with local-first signature capture
 
 ---
 

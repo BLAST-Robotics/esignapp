@@ -91,7 +91,7 @@ function FieldOverlay({
           ...containerStyle,
           fontSize: `${fs * scale}px`,
           fontWeight: 500,
-          color: '#000',
+          color: '#d4d4d4',
         }}
       >
         {autoDate}
@@ -105,7 +105,7 @@ function FieldOverlay({
       return (
         <div
           className="absolute flex items-center opacity-60"
-          style={{ ...containerStyle, fontSize: `${fs * scale}px`, fontWeight: 500, color: '#000' }}
+          style={{ ...containerStyle, fontSize: `${fs * scale}px`, fontWeight: 500, color: '#d4d4d4' }}
         >
           {d}
         </div>
@@ -120,7 +120,7 @@ function FieldOverlay({
           </div>
         )}
         {!isSig && (
-          <div className="px-2 py-1 dark:text-neutral-200" style={{ fontSize: `${Math.max(12, fs * scale)}px` }}>
+          <div className="px-2 py-1 text-neutral-100" style={{ fontSize: `${Math.max(12, fs * scale)}px` }}>
             {val}
           </div>
         )}
@@ -141,24 +141,26 @@ function FieldOverlay({
               if (!val) onOpenSignature(f.id);
             }
           }}
-          className={`relative rounded-lg overflow-hidden transition-all duration-300 ${val ? 'bg-transparent border-0' : 'bg-blue-50 dark:bg-blue-900/20 border-2 border-dashed border-blue-300 dark:border-blue-700 hover:border-blue-500 cursor-pointer'}`}
+          className={`relative w-full rounded-lg transition-all duration-300 ${val ? 'bg-transparent border-0' : 'bg-blue-50 dark:bg-blue-900/20 border-2 border-dashed border-blue-300 dark:border-blue-700 hover:border-blue-500 cursor-pointer'}`}
           style={{ height: `${h * scale}px` }}
         >
           {val ? (
-            <>
-              <img src={val} alt="Signature" className="w-full h-full object-contain" />
+            <div className="relative w-full h-full">
+              <div className="absolute inset-0 rounded-lg overflow-hidden">
+                <img src={val} alt="Signature" className="w-full h-full object-contain" />
+              </div>
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onRemoveSignature(f.id);
                 }}
-                className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm z-10"
+                className="absolute -top-2.5 -right-2.5 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-md z-20"
                 title="Remove signature"
               >
                 <svg
                   aria-hidden="true"
-                  className="w-3 h-3"
+                  className="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2.5"
@@ -167,9 +169,9 @@ function FieldOverlay({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-            </>
+            </div>
           ) : (
-            <div className="flex items-center justify-center h-full text-blue-400 dark:text-blue-300 text-xs font-medium">
+            <div className="flex items-center justify-center h-full text-blue-300 text-xs font-medium">
               {renderer.placeholder}
             </div>
           )}
@@ -205,7 +207,7 @@ function FieldOverlay({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') onActivate(f.id);
               }}
-              className={`px-2 py-1 rounded-lg transition-all duration-200 cursor-pointer ${fieldErrors?.[f.id] ? 'bg-red-50 dark:bg-red-900/30 border-2 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200' : isFilled ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-gray-800 dark:text-neutral-200' : 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-dashed border-yellow-300 dark:border-yellow-700 hover:border-yellow-500 text-gray-400 dark:text-neutral-400'}`}
+              className={`w-full text-left px-2 py-1 rounded-lg transition-all duration-200 cursor-pointer ${fieldErrors?.[f.id] ? 'bg-red-50 dark:bg-red-900/30 border-2 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200' : isFilled ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-neutral-100' : 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-dashed border-yellow-300 dark:border-yellow-700 hover:border-yellow-500 text-neutral-400'}`}
               style={{ fontSize: `${Math.max(12, fs * scale)}px` }}
             >
               {isFilled ? val : f.label || renderer.placeholder}
