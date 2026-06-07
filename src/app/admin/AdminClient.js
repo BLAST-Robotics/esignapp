@@ -248,8 +248,9 @@ export default function AdminClient() {
               {authError}
             </div>
           )}
-          {(new URLSearchParams(window.location.search).get('oauth_error') === 'no_session' ||
-            new URLSearchParams(window.location.search).get('oauth_error') === 'exchange_failed') && (
+          {googleOAuthEnabled &&
+            (new URLSearchParams(window.location.search).get('oauth_error') === 'no_session' ||
+              new URLSearchParams(window.location.search).get('oauth_error') === 'exchange_failed') && (
             <div className="px-3 py-2 rounded-lg text-xs font-medium bg-red-50 text-red-600">
               Google sign-in failed. Please try again.
             </div>
