@@ -1,7 +1,9 @@
 import crypto from 'node:crypto';
+import fsSync from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { getPostgresUrl, isSqlite } from './engine.js';
+import Database from 'better-sqlite3';
+import { getPostgresUrl, isPostgres, isSqlite } from './engine.js';
 
 const DATA_DIR = path.join(process.cwd(), '.data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
@@ -101,9 +103,7 @@ async function withClient(fn) {
 let sqliteDb = null;
 function getSqliteDb() {
   if (sqliteDb) return sqliteDb;
-  const Database = require('better-sqlite3');
-  const f = require('node:fs');
-  if (!f.existsSync(DATA_DIR)) f.mkdirSync(DATA_DIR, { recursive: true });
+  if (!fsSync.existsSync(DATA_DIR)) fsSync.mkdirSync(DATA_DIR, { recursive: true });
   sqliteDb = new Database(path.join(DATA_DIR, 'esign.db'));
   sqliteDb.pragma('journal_mode = WAL');
   sqliteDb.pragma('foreign_keys = ON');

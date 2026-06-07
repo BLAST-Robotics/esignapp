@@ -1,4 +1,7 @@
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import Database from 'better-sqlite3';
 
 const uuidv4 = () => crypto.randomUUID();
 
@@ -29,9 +32,6 @@ async function uniqueSlug(base, existingDocs) {
 let db = null;
 function getDb() {
   if (db) return db;
-  const Database = require('better-sqlite3');
-  const fs = require('node:fs');
-  const path = require('node:path');
   const dir = path.join(process.cwd(), '.data');
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   db = new Database(path.join(dir, 'esign.db'));

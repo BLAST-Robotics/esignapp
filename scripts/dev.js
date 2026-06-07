@@ -1,8 +1,8 @@
-import { spawn, exec } from 'node:child_process';
+import { exec, spawn } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import readline from 'node:readline';
-import os from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -121,7 +121,9 @@ async function main() {
       if (doMigrate.toLowerCase() === 'y') {
         console.log('Migrating JSON data...');
         try {
-          const { migrateJSONtoDB } = await import(pathToFileURL(path.join(__dirname, '..', 'src', 'lib', 'migrate.js')).href);
+          const { migrateJSONtoDB } = await import(
+            pathToFileURL(path.join(__dirname, '..', 'src', 'lib', 'migrate.js')).href
+          );
           await migrateJSONtoDB();
           console.log('Migration complete.');
         } catch (e) {

@@ -1,4 +1,6 @@
+import fs from 'node:fs';
 import path from 'node:path';
+import Database from 'better-sqlite3';
 
 const DATA_DIR = path.join(process.cwd(), '.data');
 const DB_PATH = path.join(DATA_DIR, 'esign.db');
@@ -7,8 +9,6 @@ let db = null;
 
 export function getDb() {
   if (db) return db;
-  const Database = require('better-sqlite3');
-  const fs = require('node:fs');
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
   db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
