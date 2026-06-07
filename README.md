@@ -80,6 +80,8 @@ ADMIN_PASSWORD=admin
 POSTGRES_URL=postgres://user:password@host:5432/database
 ```
 
+The app auto-detects Postgres from any of these env vars (first found wins): `POSTGRES_URL`, `STORAGE_URL`, `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `NEON_DATABASE_URL`, `NEON_DATABASE_URL_UNPOOLED`, `PRISMA_POSTGRES_URL`.
+
 - **Postgres** is optional — local development uses JSON files in `.data/`
 - **ADMIN_PASSWORD** enables a dev-mode login override (any email + this password)
 
@@ -108,12 +110,43 @@ npm start
 
 1. Push this repo to GitHub/GitLab/Bitbucket
 2. Import the project in Vercel
-3. Set environment variables:
-   - `ADMIN_PASSWORD` — dev-mode override (optional)
-   - `POSTGRES_URL` — Postgres connection string (recommended for production)
-4. Deploy — the postinstall script copies the PDF.js worker to `public/` automatically
+3. **Set up a Postgres database** via **Storage → Marketplace** — any of these auto-inject `POSTGRES_URL` after linking:
+   - [Neon](https://vercel.com/integrations/neon) — serverless Postgres, free tier
+   - [Supabase](https://vercel.com/integrations/supabase) — Postgres + real-time, free 500 MB
+   - [Nile](https://vercel.com/integrations/nile) — multi-tenant Postgres, free tier
+   - [Prisma Postgres](https://vercel.com/integrations/prisma-postgres) — managed Postgres, free tier
+4. **Optional**: set `ADMIN_PASSWORD` as a dev-mode override for local testing
+5. Deploy — the postinstall script copies the PDF.js worker to `public/` automatically
 
-Postgres schema auto-creates on first request.
+The Postgres schema auto-creates on first request. No migrations to run.
+
+### Storage options
+
+| Service | Type | Free tier |
+|---------|------|-----------|
+| **Neon** (Marketplace) | Serverless Postgres | 500 MB, compute credits |
+| **Supabase** (Marketplace) | Postgres + real-time | 500 MB |
+| **Nile** (Marketplace) | Multi-tenant Postgres | Usage-limited |
+| **Prisma Postgres** (Marketplace) | Managed Postgres | Usage-limited |
+| **Local JSON** (dev default) | File-based | Unlimited |
+
+All Postgres options work identically — the app uses `@vercel/postgres` and auto-detects `POSTGRES_URL`.
+
+### Edge Config & Blob
+
+**Vercel Edge Config** (fast KV for feature flags) and **Vercel Blob** (file storage for uploads) are available under **Storage** but this app does not use them currently. Uploaded PDFs are stored in `.data/uploads/` (JSON mode) or on the filesystem directly.
+
+### Local Postgres (optional)
+
+If you want to use Postgres locally instead of JSON files, create a free Postgres instance on [Neon](https://neon.tech), [Railway](https://railway.app), or run it with Docker:
+
+```bash
+docker run -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:17
+```
+
+Then set `POSTGRES_URL=postgres://postgres:postgres@localhost:5432/postgres` in `.env.local`.
+
+The app auto-detects a real Postgres URL — if it's set, JSON files are ignored.
 
 ## Usage
 

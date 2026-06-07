@@ -45,7 +45,7 @@ let poolPromise = null;
 async function getPool() {
   if (!poolPromise) {
     const { createPool } = await import('@vercel/postgres');
-    poolPromise = createPool({ connectionString: process.env.POSTGRES_URL });
+    poolPromise = createPool({ connectionString: getPostgresUrl() });
   }
   return poolPromise;
 }
@@ -57,8 +57,19 @@ async function withClient(fn) {
   finally { client.release(); }
 }
 
+function getPostgresUrl() {
+  return process.env.POSTGRES_URL
+    || process.env.STORAGE_URL
+    || process.env.DATABASE_URL_UNPOOLED
+    || process.env.DATABASE_URL
+    || process.env.NEON_DATABASE_URL_UNPOOLED
+    || process.env.NEON_DATABASE_URL
+    || process.env.PRISMA_POSTGRES_URL;
+}
+
 export function usePostgres() {
-  return !!process.env.POSTGRES_URL && process.env.POSTGRES_URL !== 'postgres://placeholder:placeholder@localhost:5432/placeholder';
+  const url = getPostgresUrl();
+  return !!url && url !== 'postgres://placeholder:placeholder@localhost:5432/placeholder';
 }
 
 export async function initAuthTable() {

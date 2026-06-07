@@ -29,8 +29,19 @@ const DATA_DIR = path.join(process.cwd(), '.data');
 const SIG_FILE = path.join(DATA_DIR, 'signatures.json');
 const DOC_FILE = path.join(DATA_DIR, 'documents.json');
 
+function getPostgresUrl() {
+  return process.env.POSTGRES_URL
+    || process.env.STORAGE_URL
+    || process.env.DATABASE_URL_UNPOOLED
+    || process.env.DATABASE_URL
+    || process.env.NEON_DATABASE_URL_UNPOOLED
+    || process.env.NEON_DATABASE_URL
+    || process.env.PRISMA_POSTGRES_URL;
+}
+
 function usePostgres() {
-  return !!process.env.POSTGRES_URL && process.env.POSTGRES_URL !== 'postgres://placeholder:placeholder@localhost:5432/placeholder';
+  const url = getPostgresUrl();
+  return !!url && url !== 'postgres://placeholder:placeholder@localhost:5432/placeholder';
 }
 
 // ─── JSON file helpers ──────────────────────────────────────────
@@ -58,7 +69,7 @@ let poolPromise = null;
 async function getPool() {
   if (!poolPromise) {
     const { createPool } = await import('@vercel/postgres');
-    poolPromise = createPool({ connectionString: process.env.POSTGRES_URL });
+    poolPromise = createPool({ connectionString: getPostgresUrl() });
   }
   return poolPromise;
 }

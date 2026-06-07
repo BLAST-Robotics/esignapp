@@ -1,11 +1,21 @@
 import { createPool } from '@vercel/postgres';
 
+function getUrl() {
+  return process.env.POSTGRES_URL
+    || process.env.STORAGE_URL
+    || process.env.DATABASE_URL_UNPOOLED
+    || process.env.DATABASE_URL
+    || process.env.NEON_DATABASE_URL_UNPOOLED
+    || process.env.NEON_DATABASE_URL
+    || process.env.PRISMA_POSTGRES_URL;
+}
+
 let pool;
 
 export function getPool() {
   if (!pool) {
     pool = createPool({
-      connectionString: process.env.POSTGRES_URL,
+      connectionString: getUrl(),
     });
   }
   return pool;
