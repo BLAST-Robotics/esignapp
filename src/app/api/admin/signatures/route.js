@@ -1,5 +1,5 @@
-import { initTable, getSignatures } from '@/lib/storage';
 import { requireAuth } from '@/lib/auth';
+import { getSignatures, initTable } from '@/lib/storage';
 
 export async function GET(request) {
   const user = await requireAuth(request);

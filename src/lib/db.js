@@ -1,13 +1,15 @@
 import { createPool } from '@vercel/postgres';
 
 function getUrl() {
-  return process.env.POSTGRES_URL
-    || process.env.STORAGE_URL
-    || process.env.DATABASE_URL_UNPOOLED
-    || process.env.DATABASE_URL
-    || process.env.NEON_DATABASE_URL_UNPOOLED
-    || process.env.NEON_DATABASE_URL
-    || process.env.PRISMA_POSTGRES_URL;
+  return (
+    process.env.POSTGRES_URL ||
+    process.env.STORAGE_URL ||
+    process.env.DATABASE_URL_UNPOOLED ||
+    process.env.DATABASE_URL ||
+    process.env.NEON_DATABASE_URL_UNPOOLED ||
+    process.env.NEON_DATABASE_URL ||
+    process.env.PRISMA_POSTGRES_URL
+  );
 }
 
 let pool;

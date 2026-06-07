@@ -1,5 +1,5 @@
-import { getDocument, saveDocumentFields, updateDocument } from '@/lib/storage';
 import { requireAuth } from '@/lib/auth';
+import { getDocument, saveDocumentFields, updateDocument } from '@/lib/storage';
 
 export async function PUT(request, { params }) {
   const user = await requireAuth(request);

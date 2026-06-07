@@ -1,20 +1,16 @@
-import { initTable, createDocument, getDocuments } from '@/lib/storage';
-import { requireAuth, requireAdmin } from '@/lib/auth';
-import { getAccessibleDocuments, getUserPermission } from '@/lib/auth';
-import fs from 'fs/promises';
-import path from 'path';
+import { getAccessibleDocuments, requireAuth } from '@/lib/auth';
+import { createDocument, getDocuments, initTable } from '@/lib/storage';
 
 export async function GET(request) {
   try {
     await initTable();
-    let user = await requireAuth(request);
+    const user = await requireAuth(request);
     let docs;
 
     if (user && user.role === 'admin') {
       docs = await getDocuments();
     } else if (user) {
       docs = await getDocuments({ userId: user.userId });
-      // Also include shared documents
       const shared = await getAccessibleDocuments(user.userId);
       for (const s of shared) {
         if (!docs.find((d) => d.id === s.document_id)) {
@@ -50,19 +46,15 @@ export async function POST(request) {
     const file = formData.get('file');
     const title = formData.get('title') || file?.name?.replace(/\.pdf$/i, '') || 'Untitled';
 
-    if (!file || !file.name?.toLowerCase().endsWith('.pdf')) {
+    if (!file?.name?.toLowerCase().endsWith('.pdf')) {
       return Response.json({ error: 'Please upload a PDF file' }, { status: 400 });
     }
 
-    const uploadsDir = path.join(process.cwd(), '.data', 'uploads');
-    await fs.mkdir(uploadsDir, { recursive: true });
     const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-    const filePath = path.join(uploadsDir, filename);
-
     const bytes = await file.arrayBuffer();
-    await fs.writeFile(filePath, Buffer.from(bytes));
+    const fileBuffer = Buffer.from(bytes);
 
-    const id = await createDocument({ title, filename, filePath, userId: user.userId });
+    const id = await createDocument({ title, filename, fileBuffer, userId: user.userId });
 
     return Response.json({ success: true, id });
   } catch (error) {

@@ -1,8 +1,7 @@
-import { getSignatures, getSignature, getDocument } from '@/lib/storage';
-import { stampPdf } from '@/lib/stampPdf';
-import { requireAuth } from '@/lib/auth';
 import { PDFDocument } from 'pdf-lib';
-import fs from 'fs/promises';
+import { requireAuth } from '@/lib/auth';
+import { stampPdf } from '@/lib/stampPdf';
+import { getDocument, getDocumentFile, getSignature, getSignatures } from '@/lib/storage';
 
 export async function GET(request) {
   const user = await requireAuth(request);
@@ -23,8 +22,10 @@ export async function GET(request) {
 
       if (full.document_id) {
         docWithFields = await getDocument(full.document_id);
-        if (!docWithFields || !docWithFields.file_path) continue;
-        pdfBytes = await fs.readFile(docWithFields.file_path);
+        if (!docWithFields) continue;
+        const file = await getDocumentFile(full.document_id);
+        if (!file) continue;
+        pdfBytes = file.data;
       } else {
         continue;
       }

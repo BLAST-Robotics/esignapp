@@ -1,6 +1,6 @@
 import { getDocument } from '@/lib/storage';
 
-export async function GET(request, { params }) {
+export async function GET(_request, { params }) {
   const { id } = await params;
   try {
     const doc = await getDocument(id);

@@ -1,8 +1,7 @@
-import { getSignature, getDocument } from '@/lib/storage';
-import { stampPdf } from '@/lib/stampPdf';
-import { requireAuth } from '@/lib/auth';
 import { PDFDocument } from 'pdf-lib';
-import fs from 'fs/promises';
+import { requireAuth } from '@/lib/auth';
+import { stampPdf } from '@/lib/stampPdf';
+import { getDocument, getDocumentFile, getSignature } from '@/lib/storage';
 
 export async function GET(request) {
   const user = await requireAuth(request);
@@ -21,10 +20,12 @@ export async function GET(request) {
 
     if (row.document_id) {
       docWithFields = await getDocument(row.document_id);
-      if (!docWithFields || !docWithFields.file_path) {
+      if (!docWithFields) {
         return Response.json({ error: 'Document file not found' }, { status: 404 });
       }
-      pdfBytes = await fs.readFile(docWithFields.file_path);
+      const file = await getDocumentFile(row.document_id);
+      if (!file) return Response.json({ error: 'Document file not found' }, { status: 404 });
+      pdfBytes = file.data;
     } else {
       return Response.json({ error: 'Document file not found' }, { status: 404 });
     }

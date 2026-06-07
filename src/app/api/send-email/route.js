@@ -1,9 +1,9 @@
-import { getSignature } from '@/lib/storage';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { PDFDocument } from 'pdf-lib';
 import { getSettings } from '@/lib/settings';
 import { stampPdf } from '@/lib/stampPdf';
-import { PDFDocument } from 'pdf-lib';
-import path from 'path';
-import fs from 'fs/promises';
+import { getSignature } from '@/lib/storage';
 
 export async function POST(request) {
   try {
@@ -46,10 +46,12 @@ export async function POST(request) {
       to: email.trim(),
       subject: 'Your Signed Summer Camp Handbook',
       text: `Thank you for signing the summer camp handbook for ${row.child_name}.\n\nYour signed document is attached.\n\n- Summer Camp Team`,
-      attachments: [{
-        filename: `signed-handbook-${row.child_name.replace(/\s+/g, '_')}.pdf`,
-        content: Buffer.from(modifiedPdf),
-      }],
+      attachments: [
+        {
+          filename: `signed-handbook-${row.child_name.replace(/\s+/g, '_')}.pdf`,
+          content: Buffer.from(modifiedPdf),
+        },
+      ],
     });
 
     return Response.json({ success: true });

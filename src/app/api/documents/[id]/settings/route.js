@@ -1,5 +1,5 @@
-import { getDocument, getDocumentSettings, updateDocumentSettings } from '@/lib/storage';
 import { requireAuth } from '@/lib/auth';
+import { getDocument, getDocumentSettings, updateDocumentSettings } from '@/lib/storage';
 
 function canManage(document, user) {
   if (!document || !user) return false;

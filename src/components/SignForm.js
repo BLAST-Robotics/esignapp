@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import ThemeToggle from './ThemeToggle';
 import SignaturePicker from './SignaturePicker';
+import ThemeToggle from './ThemeToggle';
 
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
@@ -25,7 +25,11 @@ function LazyPage({ pageNumber, width, children }) {
   const computedHeight = typeof width === 'number' ? width * 1.294 : 800;
 
   return (
-    <div ref={ref} className="mb-4 last:mb-0 relative shadow-lg rounded-lg overflow-hidden border border-black/5" id={`page-${pageNumber}`}>
+    <div
+      ref={ref}
+      className="mb-4 last:mb-0 relative shadow-lg rounded-lg overflow-hidden border border-black/5"
+      id={`page-${pageNumber}`}
+    >
       {visible ? (
         <Page
           pageNumber={pageNumber}
@@ -42,14 +46,27 @@ function LazyPage({ pageNumber, width, children }) {
   );
 }
 
-function FieldOverlay({ fieldKey, settings, scale, active, filled, value, onActivate, onFieldUpdate, onOpenSignature, onRemoveSignature, sigPreview, readOnly }) {
+function FieldOverlay({
+  fieldKey,
+  settings,
+  scale,
+  active,
+  filled,
+  value,
+  onActivate,
+  onFieldUpdate,
+  onOpenSignature,
+  onRemoveSignature,
+  sigPreview,
+  readOnly,
+}) {
   const f = settings || {};
   const isSig = fieldKey === 'signature';
   const isText = fieldKey === 'childName' || fieldKey === 'parentName';
   const isDate = fieldKey === 'signedDate';
   const isFilled = isSig ? !!sigPreview : !!value;
-  const w = (f.width || 200);
-  const h = isDate ? (f.fontSize || 10) * 1.5 : (f.height || 40);
+  const w = f.width || 200;
+  const h = isDate ? (f.fontSize || 10) * 1.5 : f.height || 40;
   const fs = f.fontSize || 11;
 
   if (!isSig && !isText && !isDate) return null;
@@ -63,10 +80,16 @@ function FieldOverlay({ fieldKey, settings, scale, active, filled, value, onActi
 
   if (isDate) {
     return (
-      <div className="absolute pointer-events-none flex items-center opacity-60" style={{
-        ...containerStyle, top: `${(f.y || 0) * scale}px`,
-        fontSize: `${fs * scale}px`, fontWeight: 500, color: '#000',
-      }}>
+      <div
+        className="absolute pointer-events-none flex items-center opacity-60"
+        style={{
+          ...containerStyle,
+          top: `${(f.y || 0) * scale}px`,
+          fontSize: `${fs * scale}px`,
+          fontWeight: 500,
+          color: '#000',
+        }}
+      >
         {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
       </div>
     );
@@ -92,10 +115,20 @@ function FieldOverlay({ fieldKey, settings, scale, active, filled, value, onActi
   return (
     <div className="absolute transition-all duration-300 ease-out" style={containerStyle}>
       {isSig && (
-        <div
-          onClick={() => { if (!sigPreview) onOpenSignature(); }}
+        <button
+          type="button"
+          onClick={() => {
+            if (!sigPreview) onOpenSignature();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              if (!sigPreview) onOpenSignature();
+            }
+          }}
           className={`relative rounded-lg overflow-hidden transition-all duration-300 ${
-            sigPreview ? 'bg-transparent border-0' : 'bg-blue-50 border-2 border-dashed border-blue-300 hover:border-blue-500 cursor-pointer'
+            sigPreview
+              ? 'bg-transparent border-0'
+              : 'bg-blue-50 border-2 border-dashed border-blue-300 hover:border-blue-500 cursor-pointer'
           }`}
           style={{ height: `${h * scale}px` }}
         >
@@ -103,37 +136,55 @@ function FieldOverlay({ fieldKey, settings, scale, active, filled, value, onActi
             <>
               <img src={sigPreview} alt="Signature" className="w-full h-full object-contain" />
               {!readOnly && (
-                <button onClick={(e) => { e.stopPropagation(); onRemoveSignature(); }}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveSignature();
+                  }}
                   className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm z-10"
-                  title="Remove signature">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  title="Remove signature"
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               )}
             </>
           ) : (
-            <div className="flex items-center justify-center h-full text-blue-400 text-xs font-medium">
-              Tap to sign
-            </div>
+            <div className="flex items-center justify-center h-full text-blue-400 text-xs font-medium">Tap to sign</div>
           )}
-        </div>
+        </button>
       )}
 
-      {isText && (
-        active === fieldKey ? (
+      {isText &&
+        (active === fieldKey ? (
           <input
-            autoFocus
             type="text"
             value={value || ''}
             onChange={(e) => onFieldUpdate(fieldKey, e.target.value)}
             onBlur={() => onActivate(null)}
-            onKeyDown={(e) => { if (e.key === 'Enter') onActivate(null); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onActivate(null);
+            }}
             className="w-full px-2 py-1 border-2 border-blue-500 rounded-lg text-sm bg-white shadow-lg outline-none transition-all duration-200"
             style={{ fontSize: `${Math.max(12, fs * scale)}px` }}
             placeholder={fieldKey === 'childName' ? "Child's name" : "Parent's name"}
           />
         ) : (
-          <div
+          <button
+            type="button"
             onClick={() => onActivate(fieldKey)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') onActivate(fieldKey);
+            }}
             className={`px-2 py-1 rounded-lg transition-all duration-200 cursor-pointer ${
               isFilled
                 ? 'bg-green-50 border border-green-200 text-gray-800'
@@ -141,10 +192,9 @@ function FieldOverlay({ fieldKey, settings, scale, active, filled, value, onActi
             }`}
             style={{ fontSize: `${Math.max(12, fs * scale)}px` }}
           >
-            {isFilled ? value : (fieldKey === 'childName' ? "Child's name" : "Parent's name")}
-          </div>
-        )
-      )}
+            {isFilled ? value : fieldKey === 'childName' ? "Child's name" : "Parent's name"}
+          </button>
+        ))}
     </div>
   );
 }
@@ -205,7 +255,10 @@ function Confetti() {
       canvas.height = H;
     }
     window.addEventListener('resize', onResize);
-    return () => { cancelAnimationFrame(anim); window.removeEventListener('resize', onResize); };
+    return () => {
+      cancelAnimationFrame(anim);
+      window.removeEventListener('resize', onResize);
+    };
   }, []);
 
   return <canvas ref={canvasRef} className="fixed inset-0 z-50 pointer-events-none" />;
@@ -292,7 +345,7 @@ export default function SignForm() {
     const viewUrl = `${base}/api/public/download?id=${signatureId}&mode=view`;
     const subject = encodeURIComponent('Congratulations!');
     const body = encodeURIComponent(
-      `You have successfully signed the release. You can download it here:\n${downloadUrl}\n\nOr View It Here:\n${viewUrl}`
+      `You have successfully signed the release. You can download it here:\n${downloadUrl}\n\nOr View It Here:\n${viewUrl}`,
     );
     window.open(`mailto:${encodeURIComponent(email.trim())}?subject=${subject}&body=${body}`, '_blank');
   }
@@ -332,12 +385,15 @@ export default function SignForm() {
 
   const pdfWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth - 16, 900) : 700;
 
-  const activeOverlayFields = settings && numPages ? [
-    { key: 'childName', settings: settings.childName, value: childName },
-    { key: 'parentName', settings: settings.parentName, value: parentName },
-    { key: 'signature', settings: settings.signature },
-    { key: 'signedDate', settings: settings.signedDate },
-  ] : [];
+  const activeOverlayFields =
+    settings && numPages
+      ? [
+          { key: 'childName', settings: settings.childName, value: childName },
+          { key: 'parentName', settings: settings.parentName, value: parentName },
+          { key: 'signature', settings: settings.signature },
+          { key: 'signedDate', settings: settings.signedDate },
+        ]
+      : [];
 
   const lastPageNum = numPages || 1;
 
@@ -355,7 +411,11 @@ export default function SignForm() {
       <div className="absolute top-3 right-3 z-50">
         <ThemeToggle />
       </div>
-      <div ref={containerRef} className="flex-1 overflow-y-auto smooth-scroll px-2 py-4" style={{ paddingBottom: '88px' }}>
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-y-auto smooth-scroll px-2 py-4"
+        style={{ paddingBottom: '88px' }}
+      >
         <div className="max-w-4xl mx-auto">
           <Document
             file="/handbook.pdf"
@@ -364,26 +424,34 @@ export default function SignForm() {
             error={<div className="py-24 text-center text-red-400 text-sm">Place handbook.pdf in public/</div>}
           >
             <div className="flex flex-col items-center">
-              {numPages && Array.from({ length: numPages }, (_, i) => (
-                <LazyPage key={i + 1} pageNumber={i + 1} width={pdfWidth}>
-                  {i + 1 === lastPageNum && settings && !submitted && !showPreview && (
-                    <div className="absolute inset-0 pointer-events-auto" style={{ width: pdfWidth }}>
-                      {activeOverlayFields.map((f) => (
-                        <FieldOverlay
-                          key={f.key} fieldKey={f.key} settings={f.settings}
-                          scale={pdfWidth / 612} active={activeField}
-                          filled={f.key === 'signature' ? !!sigDataUrl : !!f.value}
-                          value={f.value} onActivate={setActiveField}
-                          onFieldUpdate={(k, v) => { if (k === 'childName') setChildName(v); else setParentName(v); }}
-                          onOpenSignature={() => setSigPickerOpen(true)}
-                          onRemoveSignature={() => setSigDataUrl(null)}
-                          sigPreview={sigDataUrl}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </LazyPage>
-              ))}
+              {numPages &&
+                Array.from({ length: numPages }, (_, i) => (
+                  <LazyPage key={i + 1} pageNumber={i + 1} width={pdfWidth}>
+                    {i + 1 === lastPageNum && settings && !submitted && !showPreview && (
+                      <div className="absolute inset-0 pointer-events-auto" style={{ width: pdfWidth }}>
+                        {activeOverlayFields.map((f) => (
+                          <FieldOverlay
+                            key={f.key}
+                            fieldKey={f.key}
+                            settings={f.settings}
+                            scale={pdfWidth / 612}
+                            active={activeField}
+                            filled={f.key === 'signature' ? !!sigDataUrl : !!f.value}
+                            value={f.value}
+                            onActivate={setActiveField}
+                            onFieldUpdate={(k, v) => {
+                              if (k === 'childName') setChildName(v);
+                              else setParentName(v);
+                            }}
+                            onOpenSignature={() => setSigPickerOpen(true)}
+                            onRemoveSignature={() => setSigDataUrl(null)}
+                            sigPreview={sigDataUrl}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </LazyPage>
+                ))}
             </div>
           </Document>
         </div>
@@ -391,42 +459,64 @@ export default function SignForm() {
 
       {/* Down arrow scroll button */}
       {!submitted && !showPreview && itemsLeft > 0 && (
-        <button onClick={scrollToNextField}
-          className="fixed left-1/2 -translate-x-1/2 bottom-28 z-30 w-10 h-10 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center hover:bg-blue-700 active:scale-95 transition-all duration-200">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+        <button
+          type="button"
+          onClick={scrollToNextField}
+          className="fixed left-1/2 -translate-x-1/2 bottom-28 z-30 w-10 h-10 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center hover:bg-blue-700 active:scale-95 transition-all duration-200"
+        >
+          <svg
+            aria-hidden="true"
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            viewBox="0 0 24 24"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
           </svg>
         </button>
       )}
 
-
-
       {/* Sticky bottom bar */}
       {!submitted && !showPreview && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-40 safe-area-bottom transition-all duration-300" style={{ colorScheme: 'light' }}>
+        <div
+          className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-40 safe-area-bottom transition-all duration-300"
+          style={{ colorScheme: 'light' }}
+        >
           <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 overflow-x-auto scrollbar-none">
               {STATUS.map((s) => (
-                <button key={s.key} onClick={() => scrollToField(s.key)}
+                <button
+                  type="button"
+                  key={s.key}
+                  onClick={() => scrollToField(s.key)}
                   className={`flex items-center gap-1.5 text-xs font-medium whitespace-nowrap px-2.5 py-1.5 rounded-lg transition-all ${
                     s.done ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                  }`}>
-                  <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-bold ${
-                    s.done ? 'bg-emerald-500 text-white' : 'bg-gray-300 text-white'
-                  }`}>
-                    {s.done ? '\u2713' : (STATUS.findIndex((x) => x.key === s.key) + 1)}
+                  }`}
+                >
+                  <span
+                    className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-bold ${
+                      s.done ? 'bg-emerald-500 text-white' : 'bg-gray-300 text-white'
+                    }`}
+                  >
+                    {s.done ? '\u2713' : STATUS.findIndex((x) => x.key === s.key) + 1}
                   </span>
                   {s.label}
                 </button>
               ))}
             </div>
             <button
+              type="button"
               className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 whitespace-nowrap active:scale-[0.98] ${
                 allDone
                   ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700 cursor-pointer'
                   : 'bg-blue-600/90 text-white hover:bg-blue-700 cursor-pointer'
               }`}
-              onClick={() => { if (allDone) setShowPreview(true); else scrollToNextField(); }}>
+              onClick={() => {
+                if (allDone) setShowPreview(true);
+                else scrollToNextField();
+              }}
+            >
               {allDone ? 'Review & Submit' : `${itemsLeft} field${itemsLeft !== 1 ? 's' : ''} remaining`}
             </button>
           </div>
@@ -438,7 +528,7 @@ export default function SignForm() {
         <div className="fixed inset-0 z-50 flex flex-col bg-black/60 animate-in fade-in duration-200">
           <div className="flex-1 overflow-y-auto px-4 py-6">
             <div className="max-w-2xl mx-auto">
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-black/5">
+              <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-black/5">
                 <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                   <div>
                     <h2 className="text-base font-bold text-gray-900">Review Your Signature</h2>
@@ -450,7 +540,11 @@ export default function SignForm() {
                   <div className="relative mx-auto" style={{ width: Math.min(500, pdfWidth - 32) }}>
                     <Document
                       file="/handbook.pdf"
-                      loading={<div className="py-24 text-center text-gray-400 text-sm animate-pulse">Loading preview&hellip;</div>}
+                      loading={
+                        <div className="py-24 text-center text-gray-400 text-sm animate-pulse">
+                          Loading preview&hellip;
+                        </div>
+                      }
                     >
                       <Page
                         pageNumber={lastPageNum}
@@ -463,10 +557,14 @@ export default function SignForm() {
                       <div className="absolute inset-0 pointer-events-none">
                         {activeOverlayFields.map((f) => (
                           <FieldOverlay
-                            key={f.key} fieldKey={f.key} settings={f.settings}
-                            scale={Math.min(500, pdfWidth - 32) / 612} readOnly
+                            key={f.key}
+                            fieldKey={f.key}
+                            settings={f.settings}
+                            scale={Math.min(500, pdfWidth - 32) / 612}
+                            readOnly
                             filled={f.key === 'signature' ? !!sigDataUrl : !!f.value}
-                            value={f.value} sigPreview={sigDataUrl}
+                            value={f.value}
+                            sigPreview={sigDataUrl}
                           />
                         ))}
                       </div>
@@ -475,15 +573,34 @@ export default function SignForm() {
                 </div>
 
                 <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-3">
-                  <button onClick={() => setShowPreview(false)}
-                    className="px-5 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium rounded-xl hover:bg-gray-50 transition-all">
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview(false)}
+                    className="px-5 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium rounded-xl hover:bg-gray-50 transition-all"
+                  >
                     Edit
                   </button>
-                  <button onClick={handleSubmit} disabled={submitting}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 disabled:opacity-40 transition-all duration-200 flex items-center gap-2 active:scale-[0.98] shadow-sm">
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 disabled:opacity-40 transition-all duration-200 flex items-center gap-2 active:scale-[0.98] shadow-sm"
+                  >
                     {submitting ? (
-                      <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Submitting</>
-                    ) : 'Looks good, Submit!'}
+                      <>
+                        <svg aria-hidden="true" className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
+                        </svg>
+                        Submitting
+                      </>
+                    ) : (
+                      'Looks good, Submit!'
+                    )}
                   </button>
                 </div>
               </div>
@@ -497,7 +614,14 @@ export default function SignForm() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-100 dark:bg-neutral-900 p-4">
           <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 sm:p-8 max-w-md w-full text-center space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500 max-h-[90vh] overflow-y-auto">
             <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
-              <svg className="w-7 h-7 text-emerald-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg
+                aria-hidden="true"
+                className="w-7 h-7 text-emerald-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
               </svg>
             </div>
@@ -505,31 +629,70 @@ export default function SignForm() {
             <p className="text-sm text-gray-500">Email yourself a copy or download it now.</p>
 
             <div className="flex flex-col sm:flex-row gap-2">
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <button onClick={handleMailTo} disabled={!email.trim()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-40 transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1.5 active:scale-[0.98] shadow-sm">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={handleMailTo}
+                disabled={!email.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-40 transition-all duration-200 whitespace-nowrap flex items-center justify-center gap-1.5 active:scale-[0.98] shadow-sm"
+              >
+                <svg
+                  aria-hidden="true"
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
                 Email Yourself
               </button>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <button onClick={handleDownload}
-                className="flex-1 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-all flex items-center justify-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <button
+                type="button"
+                onClick={handleDownload}
+                className="flex-1 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+              >
+                <svg
+                  aria-hidden="true"
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
                 Download PDF
               </button>
-              <button onClick={handleContinue} disabled={redirecting}
-                className="flex-1 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-all duration-200 active:scale-[0.98]">
+              <button
+                type="button"
+                onClick={handleContinue}
+                disabled={redirecting}
+                className="flex-1 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-all duration-200 active:scale-[0.98]"
+              >
                 {redirecting ? 'Redirecting...' : 'Continue'}
               </button>
             </div>
 
-            <p className="text-xs text-gray-400">
-              A download and view link will be included in the email.
-            </p>
+            <p className="text-xs text-gray-400">A download and view link will be included in the email.</p>
           </div>
         </div>
       )}
@@ -544,9 +707,13 @@ export default function SignForm() {
       )}
 
       {message && (
-        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-xl text-sm font-medium shadow-lg border animate-in slide-in-from-top-2 duration-300 ${
-          message.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
-        }`}>
+        <div
+          className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-xl text-sm font-medium shadow-lg border animate-in slide-in-from-top-2 duration-300 ${
+            message.type === 'success'
+              ? 'bg-green-50 text-green-700 border-green-200'
+              : 'bg-red-50 text-red-700 border-red-200'
+          }`}
+        >
           {message.text}
         </div>
       )}

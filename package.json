@@ -2,16 +2,24 @@
   "name": "esignapp",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "next dev --port 80",
+    "dev": "bun run scripts/dev.js",
+    "dev:json": "bun run scripts/dev.js --json",
+    "dev:sqlite": "bun run scripts/dev.js --sqlite",
+    "dev:postgres": "bun run scripts/dev.js --postgres",
+    "migrate": "bun run scripts/migrate.js",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "biome check src/ scripts/",
+    "lint:fix": "biome check --fix src/ scripts/",
     "postinstall": "node -e \"require('fs').cpSync(require('path').join('node_modules','pdfjs-dist','build','pdf.worker.min.mjs'), require('path').join('public','pdf.worker.min.mjs')); console.log('PDF worker copied to public/');\""
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0",
     "archiver": "^8.0.0",
+    "better-sqlite3": "^12.10.0",
+    "blessed": "^0.1.81",
     "next": "16.2.7",
     "nodemailer": "^8.0.10",
     "pdf-lib": "^1.17.1",
@@ -23,9 +31,8 @@
     "sharp": "^0.34.5"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
     "@tailwindcss/postcss": "^4",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.7",
     "tailwindcss": "^4"
   },
   "ignoreScripts": [

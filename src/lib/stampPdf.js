@@ -1,8 +1,21 @@
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { rgb, StandardFonts } from 'pdf-lib';
 
 export function formatDate(iso, format = 'MMMM D, YYYY') {
   const d = new Date(iso);
-  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
   const m = months[d.getMonth()];
   const dd = d.getDate();
   const yyyy = d.getFullYear();
@@ -55,7 +68,9 @@ export async function stampPdf(doc, { field_values, created_at, document_id }, d
       } catch {}
     } else if (f.field_type === 'date') {
       const fs = f.font_size || 12;
-      const displayVal = f.date_format?.startsWith('signing') ? formatDate(new Date().toISOString(), 'MMMM D, YYYY') : val;
+      const displayVal = f.date_format?.startsWith('signing')
+        ? formatDate(new Date().toISOString(), 'MMMM D, YYYY')
+        : val;
       targetPage.drawText(displayVal, {
         x,
         y: height - (f.y || 0) - fs * 0.716,

@@ -1,4 +1,4 @@
-import { requireAdmin, getAllUsers, seedAdminUser } from '@/lib/auth';
+import { getAllUsers, requireAdmin } from '@/lib/auth';
 
 export async function GET(request) {
   try {
@@ -27,7 +27,8 @@ export async function POST(request) {
     return Response.json({ success: true, userId });
   } catch (error) {
     console.error('Admin create user error:', error);
-    if (error.message === 'Email already exists') return Response.json({ error: 'Email already exists' }, { status: 409 });
+    if (error.message === 'Email already exists')
+      return Response.json({ error: 'Email already exists' }, { status: 409 });
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

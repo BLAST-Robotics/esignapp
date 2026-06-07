@@ -1,4 +1,4 @@
-import { requireAdmin, updateUser, deleteUserById } from '@/lib/auth';
+import { deleteUserById, requireAdmin, updateUser } from '@/lib/auth';
 
 export async function PUT(request, { params }) {
   const { id } = await params;

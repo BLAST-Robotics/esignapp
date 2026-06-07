@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 function aggregateByDate(signatures) {
   const map = {};
@@ -24,7 +24,9 @@ export default function SignatureChart({ signatures, title }) {
 
   return (
     <div className="bg-neutral-900 rounded-xl border border-neutral-800 p-4 shadow-sm">
-      <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">{title || 'Signatures Over Time'}</h3>
+      <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
+        {title || 'Signatures Over Time'}
+      </h3>
       <div className="h-48" style={{ minHeight: 0 }}>
         <ResponsiveContainer width="100%" height={192} minWidth={0} minHeight={0}>
           <AreaChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -37,10 +39,24 @@ export default function SignatureChart({ signatures, title }) {
             <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#a3a3a3' }} tickLine={false} axisLine={false} />
             <YAxis tick={{ fontSize: 10, fill: '#a3a3a3' }} tickLine={false} axisLine={false} allowDecimals={false} />
             <Tooltip
-              contentStyle={{ backgroundColor: '#171717', border: '1px solid #404040', borderRadius: 8, fontSize: 12, color: '#d4d4d4' }}
+              contentStyle={{
+                backgroundColor: '#171717',
+                border: '1px solid #404040',
+                borderRadius: 8,
+                fontSize: 12,
+                color: '#d4d4d4',
+              }}
               labelStyle={{ color: '#a3a3a3', fontSize: 10 }}
             />
-            <Area type="monotone" dataKey="cumulative" stroke="#3b82f6" strokeWidth={2} fill="url(#sigGrad)" dot={false} activeDot={{ r: 4, fill: '#3b82f6' }} />
+            <Area
+              type="monotone"
+              dataKey="cumulative"
+              stroke="#3b82f6"
+              strokeWidth={2}
+              fill="url(#sigGrad)"
+              dot={false}
+              activeDot={{ r: 4, fill: '#3b82f6' }}
+            />
           </AreaChart>
         </ResponsiveContainer>
       </div>

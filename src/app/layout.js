@@ -1,20 +1,20 @@
-import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "@/components/ThemeProvider";
-import "./globals.css";
+import { Geist, Geist_Mono } from 'next/font/google';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import './globals.css';
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
 });
 
 export const metadata = {
-  title: "KeySign",
-  description: "Drag-and-drop e-signature platform",
+  title: 'KeySign',
+  description: 'Drag-and-drop e-signature platform',
   icons: { icon: '/icon.png' },
 };
 

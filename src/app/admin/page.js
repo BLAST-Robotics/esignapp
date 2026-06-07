@@ -6,5 +6,9 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 const AdminContent = dynamic(() => import('./AdminClient'), { ssr: false });
 
 export default function AdminPage() {
-  return <ErrorBoundary><AdminContent /></ErrorBoundary>;
+  return (
+    <ErrorBoundary>
+      <AdminContent />
+    </ErrorBoundary>
+  );
 }

@@ -1,5 +1,5 @@
-import fs from 'fs/promises';
-import path from 'path';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
 const DATA_DIR = path.join(process.cwd(), '.data');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');

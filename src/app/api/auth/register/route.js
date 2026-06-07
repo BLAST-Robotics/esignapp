@@ -1,4 +1,4 @@
-import { initAuthTable, createUser } from '@/lib/auth';
+import { createUser, initAuthTable } from '@/lib/auth';
 
 export async function POST(request) {
   try {

@@ -1,9 +1,8 @@
-import { getDocument, getSignatures, getSignature } from '@/lib/storage';
-import { stampPdf } from '@/lib/stampPdf';
-import { requireAuth } from '@/lib/auth';
-import { PDFDocument } from 'pdf-lib';
-import fs from 'fs/promises';
 import { Archiver } from 'archiver';
+import { PDFDocument } from 'pdf-lib';
+import { requireAuth } from '@/lib/auth';
+import { stampPdf } from '@/lib/stampPdf';
+import { getDocument, getDocumentFile, getSignature, getSignatures } from '@/lib/storage';
 
 export async function GET(request, { params }) {
   const user = await requireAuth(request);
@@ -17,6 +16,10 @@ export async function GET(request, { params }) {
     const sigs = await getSignatures(id);
     if (sigs.length === 0) return Response.json({ error: 'No signatures' }, { status: 404 });
 
+    const file = await getDocumentFile(id);
+    if (!file) return Response.json({ error: 'Document file not found' }, { status: 404 });
+    const pdfBytes = file.data;
+
     const chunks = [];
     const archive = new Archiver('zip', { zlib: { level: 9 } });
     const promise = new Promise((resolve, reject) => {
@@ -29,7 +32,6 @@ export async function GET(request, { params }) {
       const full = await getSignature(sig.id);
       if (!full) continue;
       try {
-        const pdfBytes = await fs.readFile(doc.file_path);
         const subDoc = await PDFDocument.load(pdfBytes);
         await stampPdf(subDoc, full, doc);
         const stamped = await subDoc.save();

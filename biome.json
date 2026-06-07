@@ -1,0 +1,60 @@
+{
+  "$schema": "https://biomejs.dev/schemas/latest/schema.json",
+  "files": {
+    "includes": ["src/**/*.{js,jsx,mjs}", "scripts/**/*.js"],
+    "ignoreUnknown": true
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "recommended": true
+      }
+    }
+  },
+    "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "a11y": {
+        "useButtonType": "warn",
+        "noSvgWithoutTitle": "warn",
+        "useKeyWithClickEvents": "warn",
+        "noStaticElementInteractions": "warn",
+        "noLabelWithoutControl": "warn",
+        "useSemanticElements": "warn"
+      },
+      "complexity": {
+        "noStaticOnlyClass": "off",
+        "noBannedTypes": "off"
+      },
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
+        "noUnusedFunctionParameters": "warn",
+        "useExhaustiveDependencies": "warn"
+      },
+      "performance": {
+        "noImgElement": "warn"
+      },
+      "style": {
+        "noNonNullAssertion": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noArrayIndexKey": "off"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "always"
+    }
+  }
+}

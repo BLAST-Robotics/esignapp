@@ -1,8 +1,8 @@
-import { createDocument, getDocuments, saveDocumentFields } from '@/lib/storage';
-import { getSettings } from '@/lib/settings';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { requireAuth } from '@/lib/auth';
-import fs from 'fs/promises';
-import path from 'path';
+import { getSettings } from '@/lib/settings';
+import { createDocument, getDocuments, saveDocumentFields } from '@/lib/storage';
 
 export async function POST(request) {
   const user = await requireAuth(request);
@@ -11,7 +11,9 @@ export async function POST(request) {
   try {
     // Check if handbook.pdf exists
     const pdfPath = path.join(process.cwd(), 'public', 'handbook.pdf');
-    try { await fs.access(pdfPath); } catch {
+    try {
+      await fs.access(pdfPath);
+    } catch {
       return Response.json({ error: 'handbook.pdf not found in public/' }, { status: 404 });
     }
 
@@ -50,7 +52,8 @@ export async function POST(request) {
       if (!pos) continue;
       fields.push({
         id: crypto.randomUUID(),
-        x: pos.x, y: pos.y,
+        x: pos.x,
+        y: pos.y,
         width: pos.width || 200,
         height: pos.height || 40,
         font_size: pos.fontSize || 14,

@@ -1,5 +1,5 @@
-import { initTable, insertSignature, getDocument } from '@/lib/storage';
 import { headers } from 'next/headers';
+import { getDocument, initTable, insertSignature } from '@/lib/storage';
 
 function validateField(field, value) {
   if (field.field_type === 'date' && field.date_format?.startsWith('signing')) return null;
@@ -14,11 +14,18 @@ function validateField(field, value) {
 }
 
 function parseIPs(forwardedFor) {
-  const ips = (forwardedFor || '').split(',').map((s) => s.trim()).filter(Boolean);
-  let ipv4 = null, ipv6 = null;
+  const ips = (forwardedFor || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  let ipv4 = null,
+    ipv6 = null;
   for (const ip of ips) {
-    if (ip.includes(':')) { if (!ipv6) ipv6 = ip; }
-    else if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) { if (!ipv4) ipv4 = ip; }
+    if (ip.includes(':')) {
+      if (!ipv6) ipv6 = ip;
+    } else if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+      if (!ipv4) ipv4 = ip;
+    }
   }
   return { ipv4, ipv6 };
 }
@@ -34,7 +41,9 @@ async function fetchLocation(ip) {
     const data = await res.json();
     if (data.error) return null;
     return JSON.stringify({ city: data.city, region: data.region, country: data.country_name, org: data.org });
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(request) {
@@ -67,7 +76,15 @@ export async function POST(request) {
     const { ipv4, ipv6 } = parseIPs(forwardedFor);
     const ipLocation = await fetchLocation(ipv4 || ipv6 || ipAddress);
 
-    const sigId = await insertSignature({ documentId, fieldValues, signerEmail: signerEmail || null, ipAddress, ipv4: ipv4 || null, ipv6: ipv6 || null, ipLocation });
+    const sigId = await insertSignature({
+      documentId,
+      fieldValues,
+      signerEmail: signerEmail || null,
+      ipAddress,
+      ipv4: ipv4 || null,
+      ipv6: ipv6 || null,
+      ipLocation,
+    });
 
     return Response.json({ success: true, id: sigId });
   } catch (error) {

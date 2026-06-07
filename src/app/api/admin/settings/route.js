@@ -1,5 +1,5 @@
-import { getSettings, saveSettings } from '@/lib/settings';
 import { requireAuth } from '@/lib/auth';
+import { getSettings, saveSettings } from '@/lib/settings';
 
 export async function GET(request) {
   const user = await requireAuth(request);

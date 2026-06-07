@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useEffect, createContext, useContext } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 const ThemeContext = createContext({ dark: false, toggle: () => {} });
 
 export function ThemeProvider({ children }) {
   const [dark, setDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
     const saved = localStorage.getItem('theme');
     if (saved === 'dark') {
@@ -22,7 +20,6 @@ export function ThemeProvider({ children }) {
       if (prefersDark) document.documentElement.classList.add('dark');
       else document.documentElement.classList.remove('dark');
     }
-    setMounted(true);
   }, []);
 
   const toggle = () => {
@@ -37,11 +34,7 @@ export function ThemeProvider({ children }) {
     }
   };
 
-  return (
-    <ThemeContext.Provider value={{ dark, toggle }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={{ dark, toggle }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {

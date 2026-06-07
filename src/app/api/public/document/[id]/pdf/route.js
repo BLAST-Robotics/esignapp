@@ -1,13 +1,13 @@
-import fs from 'fs/promises';
-import { getDocument } from '@/lib/storage';
+import { getDocument, getDocumentFile } from '@/lib/storage';
 
-export async function GET(request, { params }) {
+export async function GET(_request, { params }) {
   const { id } = await params;
   try {
     const doc = await getDocument(id);
-    if (!doc || !doc.file_path) return Response.json({ error: 'Not found' }, { status: 404 });
-    const bytes = await fs.readFile(doc.file_path);
-    return new Response(bytes, {
+    if (!doc) return Response.json({ error: 'Not found' }, { status: 404 });
+    const file = await getDocumentFile(id);
+    if (!file) return Response.json({ error: 'File not found' }, { status: 404 });
+    return new Response(file.data, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="${doc.filename}"`,

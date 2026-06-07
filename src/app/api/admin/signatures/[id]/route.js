@@ -1,5 +1,5 @@
-import { getSignature, updateSignature, deleteSignature } from '@/lib/storage';
 import { requireAuth } from '@/lib/auth';
+import { deleteSignature, getSignature, updateSignature } from '@/lib/storage';
 
 export async function GET(request, { params }) {
   const user = await requireAuth(request);
