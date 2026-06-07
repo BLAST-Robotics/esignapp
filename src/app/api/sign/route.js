@@ -1,5 +1,20 @@
 import { headers } from 'next/headers';
-import { getDocument, initTable, insertSignature } from '@/lib/storage';
+import { getDocument, getSignatures, initTable, insertSignature } from '@/lib/storage';
+
+const submitAttempts = new Map();
+function rateLimit(ip) {
+  const now = Date.now();
+  const window = 60_000;
+  const max = 30;
+  const entry = submitAttempts.get(ip) || { count: 0, resetAt: now + window };
+  if (entry.resetAt < now) {
+    entry.count = 0;
+    entry.resetAt = now + window;
+  }
+  entry.count++;
+  submitAttempts.set(ip, entry);
+  return entry.count <= max;
+}
 
 function validateField(field, value) {
   if (field.field_type === 'date' && field.date_format?.startsWith('signing')) return null;
@@ -48,16 +63,36 @@ async function fetchLocation(ip) {
 
 export async function POST(request) {
   try {
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || 'unknown';
+    if (!rateLimit(ip)) {
+      return Response.json({ error: 'Too many requests. Try again later.' }, { status: 429 });
+    }
+
     await initTable();
     const { documentId, fieldValues, signerEmail } = await request.json();
 
-    if (!documentId || !fieldValues || typeof fieldValues !== 'object') {
+    if (!documentId || typeof fieldValues !== 'object') {
       return Response.json({ error: 'documentId and fieldValues are required.' }, { status: 400 });
     }
 
     const doc = await getDocument(documentId);
     if (!doc) {
       return Response.json({ error: 'Document not found.' }, { status: 404 });
+    }
+    if (doc.status !== 'active') {
+      return Response.json({ error: 'Document is not available for signing.' }, { status: 403 });
+    }
+
+    // Prevent duplicate signature from same email
+    if (signerEmail) {
+      const existingSigs = await getSignatures(documentId);
+      const alreadySigned = existingSigs.some(
+        (s) => (s.signer_email || '').toLowerCase() === signerEmail.trim().toLowerCase(),
+      );
+      if (alreadySigned) {
+        return Response.json({ error: 'Already signed from this email.' }, { status: 409 });
+      }
     }
 
     const fields = doc.fields || [];
@@ -79,7 +114,7 @@ export async function POST(request) {
     const sigId = await insertSignature({
       documentId,
       fieldValues,
-      signerEmail: signerEmail || null,
+      signerEmail: (signerEmail || '').trim().toLowerCase() || null,
       ipAddress,
       ipv4: ipv4 || null,
       ipv6: ipv6 || null,

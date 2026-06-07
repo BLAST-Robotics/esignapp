@@ -1,8 +1,8 @@
-import { requireAuth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth';
 import { getSettings, saveSettings } from '@/lib/settings';
 
 export async function GET(request) {
-  const user = await requireAuth(request);
+  const user = await requireAdmin(request);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const settings = await getSettings();
@@ -14,7 +14,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const user = await requireAuth(request);
+  const user = await requireAdmin(request);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const body = await request.json();

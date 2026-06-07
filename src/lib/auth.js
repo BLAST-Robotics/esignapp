@@ -22,25 +22,27 @@ import { isPostgres, isSqlite } from './drivers/engine.js';
 
 const SESSION_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-// ─── Password hashing ───────────────────────────────
+function normEmail(email) {
+  return (email || '').trim().toLowerCase();
+}
 
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
-  const key = crypto.scryptSync(password, salt, 64).toString('hex');
+  const key = crypto.scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 }).toString('hex');
   return `${salt}:${key}`;
 }
 
 function verifyPassword(password, stored) {
+  if (!stored) return false;
   const [salt, key] = stored.split(':');
-  const derived = crypto.scryptSync(password, salt, 64).toString('hex');
+  if (!salt || !key) return false;
+  const derived = crypto.scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 }).toString('hex');
   return key === derived;
 }
 
 function genToken() {
   return crypto.randomBytes(32).toString('hex');
 }
-
-// ─── Seed admin ──────────────────────────────────────
 
 const SEED_EMAIL = 'hello@keystonestemai.org';
 const SEED_PASSWORD = 'Keystone#2026$';
@@ -54,10 +56,7 @@ export async function seedAdminUser() {
     name: 'Admin',
     role: 'admin',
   });
-  console.log('Seeded admin user:', SEED_EMAIL);
 }
-
-// ─── Session wrapper (backward compat) ──────────────
 
 export async function createUserSession(userId) {
   const token = genToken();
@@ -66,21 +65,26 @@ export async function createUserSession(userId) {
   return token;
 }
 
-// ─── Auth helpers ────────────────────────────────────
-
 export async function registerUser(email, password, name) {
-  const existing = await findUserByEmail(email);
+  const normalized = normEmail(email);
+  const existing = await findUserByEmail(normalized);
   if (existing) throw new Error('Email already registered');
+  if (!password || password.length < 6) throw new Error('Password must be at least 6 characters');
   const hashed = hashPassword(password);
-  const userId = await createUser({ email, password: hashed, name, role: 'user' });
+  const userId = await createUser({
+    email: normalized,
+    password: hashed,
+    name: (name || '').trim() || null,
+    role: 'user',
+  });
   const token = genToken();
   const expiresAt = new Date(Date.now() + SESSION_TTL).toISOString();
   await createSession({ userId, token, expiresAt });
-  return { token, userId, email, name, role: 'user' };
+  return { token, userId, email: normalized, name: (name || '').trim() || null, role: 'user' };
 }
 
 export async function authenticateUser(email, password) {
-  const user = await findUserByEmail(email);
+  const user = await findUserByEmail(normEmail(email));
   if (!user) return null;
   if (!verifyPassword(password, user.password)) return null;
   const token = genToken();
@@ -100,19 +104,21 @@ export async function requireAuth(request) {
     }
   }
 
-  // Dev override: ADMIN_PASSWORD
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  if (adminPassword) {
-    const upw = request.headers.get('x-admin-password');
-    if (upw === adminPassword) {
-      const email = request.headers.get('x-admin-email') || 'dev@local';
-      const user = await findUserByEmail(email);
-      if (!user) {
-        const hashed = hashPassword(adminPassword);
-        const userId = await createUser({ email, password: hashed, name: 'Dev User', role: 'admin' });
-        return { userId, email, name: 'Dev User', role: 'admin' };
+  // Dev override: ADMIN_PASSWORD — only in non-production
+  if (process.env.NODE_ENV !== 'production') {
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (adminPassword) {
+      const upw = request.headers.get('x-admin-password') || request.headers.get('authorization-dev');
+      if (upw === adminPassword) {
+        const email = normEmail(request.headers.get('x-admin-email') || 'dev@local');
+        const user = await findUserByEmail(email);
+        if (!user) {
+          const hashed = hashPassword(adminPassword);
+          const userId = await createUser({ email, password: hashed, name: 'Dev User', role: 'admin' });
+          return { userId, email, name: 'Dev User', role: 'admin' };
+        }
+        return { userId: user.id, email: user.email, name: user.name, role: 'admin' };
       }
-      return { userId: user.id, email: user.email, name: user.name, role: 'admin' };
     }
   }
 
@@ -124,8 +130,6 @@ export async function requireAdmin(request) {
   if (user?.role !== 'admin') return null;
   return user;
 }
-
-// ─── Re-export data functions ────────────────────────
 
 export {
   cleanExpiredSessions,
@@ -146,11 +150,11 @@ export {
   initAuthTable,
   isPostgres,
   isSqlite,
+  normEmail,
   removePermission,
   updateUser,
 };
 
-// Legacy aliases
 export const getAllUsers = getUsers;
 export const deleteUserById = deleteUser;
 export const initPermTable = initAuthTable;

@@ -1308,11 +1308,15 @@ export default function DocumentEditor({ documentId }) {
                     const c = FIELD_COLORS[f.field_type] || FIELD_COLORS.other;
                     const isSel = selectedId === f.id;
                     return (
-                      <button
-                        type="button"
+                      <div
                         key={f.id}
+                        role="button"
+                        tabIndex={0}
                         onClick={() => openFieldEdit(f.id)}
-                        className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${isSel ? 'text-white shadow-sm' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}`}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') openFieldEdit(f.id);
+                        }}
+                        className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${isSel ? 'text-white shadow-sm' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}`}
                         style={{ backgroundColor: isSel ? c.border : c.bg, border: `1px solid ${c.border}` }}
                       >
                         <span
@@ -1347,7 +1351,7 @@ export default function DocumentEditor({ documentId }) {
                             </svg>
                           </button>
                         )}
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -1509,10 +1513,13 @@ export default function DocumentEditor({ documentId }) {
 
         {/* Edit signature modal */}
         {editSig && (
-          <button
-            type="button"
+          <div
+            role="presentation"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200"
             onClick={() => setEditSig(null)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setEditSig(null);
+            }}
           >
             <div
               role="dialog"
@@ -1609,7 +1616,7 @@ export default function DocumentEditor({ documentId }) {
                 </button>
               </div>
             </div>
-          </button>
+          </div>
         )}
 
         {/* Context field modal */}
@@ -1634,10 +1641,13 @@ export default function DocumentEditor({ documentId }) {
 
         {/* Share modal */}
         {showShare && canManage && (
-          <button
-            type="button"
+          <div
+            role="presentation"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
             onClick={() => setShowShare(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setShowShare(false);
+            }}
           >
             <div
               role="dialog"
@@ -1716,7 +1726,7 @@ export default function DocumentEditor({ documentId }) {
                 )}
               </div>
             </div>
-          </button>
+          </div>
         )}
       </div>
 

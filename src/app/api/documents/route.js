@@ -1,6 +1,29 @@
 import { getAccessibleDocuments, requireAuth } from '@/lib/auth';
 import { createDocument, getDocuments, initTable } from '@/lib/storage';
 
+const DOC_LIST_FIELDS = [
+  'id',
+  'user_id',
+  'title',
+  'filename',
+  'slug',
+  'status',
+  'fields',
+  'created_at',
+  'updated_at',
+  'collect_email',
+  'settings',
+  'permission',
+];
+
+function stripDoc(doc) {
+  const safe = {};
+  for (const k of DOC_LIST_FIELDS) {
+    if (k in doc) safe[k] = doc[k];
+  }
+  return safe;
+}
+
 export async function GET(request) {
   try {
     await initTable();
@@ -29,7 +52,7 @@ export async function GET(request) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    return Response.json({ documents: docs || [] });
+    return Response.json({ documents: (docs || []).map(stripDoc) });
   } catch (error) {
     console.error('Documents fetch error:', error);
     return Response.json({ error: 'Internal server error' }, { status: 500 });

@@ -13,6 +13,7 @@
     "start": "next start",
     "lint": "biome check src/ scripts/",
     "lint:fix": "biome check --fix src/ scripts/",
+    "test": "bun test",
     "postinstall": "node -e \"require('fs').cpSync(require('path').join('node_modules','pdfjs-dist','build','pdf.worker.min.mjs'), require('path').join('public','pdf.worker.min.mjs')); console.log('PDF worker copied to public/');\""
   },
   "dependencies": {

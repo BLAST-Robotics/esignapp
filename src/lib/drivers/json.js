@@ -98,9 +98,16 @@ const MIGRATIONS = {
 async function readJSON(file) {
   await ensureJSON(file, []);
   const raw = await fs.readFile(file, 'utf-8');
-  const data = JSON.parse(raw);
+  if (!raw.trim()) return [];
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(data)) return [];
   const migrate = MIGRATIONS[file];
-  if (migrate && Array.isArray(data)) {
+  if (migrate) {
     let changed = false;
     for (const item of data) {
       if (migrate(item)) changed = true;

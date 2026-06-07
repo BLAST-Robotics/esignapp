@@ -57,12 +57,32 @@ const AUTH_MIGRATIONS = {
   },
 };
 
+async function ensureDir() {
+  await fs.mkdir(DATA_DIR, { recursive: true });
+}
+
+async function ensureJSON(file, initial) {
+  await ensureDir();
+  try {
+    await fs.access(file);
+  } catch {
+    await fs.writeFile(file, JSON.stringify(initial, null, 2), 'utf-8');
+  }
+}
+
 async function readJSON(file) {
   await ensureJSON(file, []);
   const raw = await fs.readFile(file, 'utf-8');
-  const data = JSON.parse(raw);
+  if (!raw.trim()) return [];
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(data)) return [];
   const migrate = AUTH_MIGRATIONS[file];
-  if (migrate && Array.isArray(data)) {
+  if (migrate) {
     let changed = false;
     for (const item of data) {
       if (migrate(item)) changed = true;
@@ -174,7 +194,7 @@ export async function initAuthTable() {
   await withClient(async (client) => {
     await client.sql`
       CREATE TABLE IF NOT EXISTS users (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         name VARCHAR(255),
@@ -229,6 +249,8 @@ export async function findUserByEmail(email) {
 }
 
 export async function createUser({ email, password, name, role }) {
+  const existing = await findUserByEmail(email);
+  if (existing) throw new Error('Email already registered');
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   if (isSqlite()) {
@@ -289,21 +311,20 @@ export async function getUsers() {
 }
 
 export async function updateUser(id, updates) {
+  const allowed = new Set(['email', 'password', 'name', 'role']);
+  const keys = Object.keys(updates).filter((k) => allowed.has(k));
+  if (keys.length === 0) return;
   const now = new Date().toISOString();
   if (isSqlite()) {
     const d = getSqliteDb();
-    const keys = Object.keys(updates);
-    if (keys.length === 0) return;
     const sets = keys.map((k) => `${k} = ?`);
     const values = keys.map((k) => updates[k]);
-    values.push(id);
-    d.prepare(`UPDATE users SET ${sets.join(', ')}, updated_at = ? WHERE id = ?`).run(...values, now);
+    values.push(id, now);
+    d.prepare(`UPDATE users SET ${sets.join(', ')}, updated_at = ? WHERE id = ?`).run(...values);
     return;
   }
   if (isPostgres()) {
     return await withClient(async (client) => {
-      const keys = Object.keys(updates);
-      if (keys.length === 0) return;
       const sets = keys.map((k, i) => `${k} = $${i + 1}`);
       const values = keys.map((k) => updates[k]);
       values.push(id);
@@ -315,8 +336,9 @@ export async function updateUser(id, updates) {
   }
   const users = await readJSON(USERS_FILE);
   const idx = users.findIndex((u) => u.id === id);
-  if (idx === -1) throw new Error('Not found');
-  Object.assign(users[idx], updates);
+  if (idx === -1) return;
+  for (const k of keys) users[idx][k] = updates[k];
+  users[idx].updated_at = now;
   await writeJSON(USERS_FILE, users);
 }
 
