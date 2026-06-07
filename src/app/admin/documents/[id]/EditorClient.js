@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import SignatureChart from '@/components/SignatureChart';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -422,7 +422,6 @@ function CtxFieldEditor({
             type="button"
             onClick={() => {
               addField(ctxNewPos);
-              close();
             }}
             className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-all"
           >
@@ -693,7 +692,7 @@ export default function DocumentEditor({ documentId }) {
   }, [router]);
 
   const token = getToken();
-  const authHeaders = { Authorization: `Bearer ${token}` };
+  const authHeaders = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
 
   useEffect(() => {
     if (!documentId || !user) return;
@@ -718,7 +717,6 @@ export default function DocumentEditor({ documentId }) {
         setCanManage(owner || perm === 'manage');
       })
       .catch(() => setMessage({ type: 'error', text: 'Failed to load document' }));
-    // biome-ignore lint/correctness/useExhaustiveDependencies: authHeaders is stable
   }, [documentId, user, router.push, authHeaders]);
 
   const fetchSignatures = useCallback(async () => {
@@ -733,7 +731,6 @@ export default function DocumentEditor({ documentId }) {
     } finally {
       setLoadingSigs(false);
     }
-    // biome-ignore lint/correctness/useExhaustiveDependencies: authHeaders is stable
   }, [documentId, authHeaders]);
 
   useEffect(() => {
@@ -785,9 +782,25 @@ export default function DocumentEditor({ documentId }) {
     setCtxPos({ x: Math.max(16, cx), y: Math.max(16, cy) });
   }
 
+  function getVisiblePage() {
+    if (!pdfRef.current) return numPages || 1;
+    const pages = pdfRef.current.querySelectorAll('[data-page]');
+    if (pages.length === 0) return numPages || 1;
+    const viewportCenter = window.scrollY + window.innerHeight / 2;
+    let closest = pages[0];
+    let minDist = Infinity;
+    pages.forEach((page) => {
+      const rect = page.getBoundingClientRect();
+      const pageCenter = rect.top + rect.height / 2 + window.scrollY;
+      const dist = Math.abs(pageCenter - viewportCenter);
+      if (dist < minDist) { minDist = dist; closest = page; }
+    });
+    return parseInt(closest.dataset.page, 10) || numPages || 1;
+  }
+
   function addField(pos) {
     const id = genId();
-    const pageNum = pos?.page || numPages || 1;
+    const pageNum = pos?.page || getVisiblePage();
     const x = pos?.x ?? 50;
     const y = pos?.y ?? 50 + fields.length * 60;
     setFields((prev) => [
@@ -1189,7 +1202,7 @@ export default function DocumentEditor({ documentId }) {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-6 pb-16">
         {message && (
           <div
             className={`mb-4 px-4 py-3 rounded-xl text-sm border ${message.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}
@@ -1277,86 +1290,6 @@ export default function DocumentEditor({ documentId }) {
               </div>
             )}
 
-            <div className="sticky bottom-0 z-10 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md border-t border-gray-200 dark:border-neutral-800 mt-6 -mx-4 px-4 py-3">
-              <div className="flex items-center gap-2">
-                {canEdit && (
-                  <button
-                    type="button"
-                    onClick={() => addField()}
-                    className="shrink-0 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-all flex items-center gap-1 shadow-sm"
-                  >
-                    <svg
-                      aria-hidden="true"
-                      className="w-3.5 h-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Add Field
-                  </button>
-                )}
-                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none flex-1">
-                  {fields.length === 0 && (
-                    <span className="text-xs text-gray-400 italic px-2">
-                      No fields yet. Right-click the PDF or click Add Field.
-                    </span>
-                  )}
-                  {fields.map((f) => {
-                    const c = FIELD_COLORS[f.field_type] || FIELD_COLORS.other;
-                    const isSel = selectedId === f.id;
-                    return (
-                      <div
-                        key={f.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => openFieldEdit(f.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') openFieldEdit(f.id);
-                        }}
-                        className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${isSel ? 'text-white shadow-sm' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}`}
-                        style={{ backgroundColor: isSel ? c.border : c.bg, border: `1px solid ${c.border}` }}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${isSel ? 'bg-white/70' : ''}`}
-                          style={{ backgroundColor: isSel ? 'rgba(255,255,255,0.7)' : c.border }}
-                        />
-                        {f.label || f.field_type}
-                        {canEdit && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeField(f.id);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.stopPropagation();
-                                removeField(f.id);
-                              }
-                            }}
-                            className={`p-0.5 rounded cursor-pointer ${isSel ? 'hover:bg-white/20' : 'hover:bg-gray-200 dark:hover:bg-neutral-700'}`}
-                          >
-                            <svg
-                              aria-hidden="true"
-                              className="w-3 h-3"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              viewBox="0 0 24 24"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
@@ -1507,6 +1440,72 @@ export default function DocumentEditor({ documentId }) {
                   </table>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {tab === 'fields' && (
+          <div className="fixed bottom-0 left-0 right-0 z-10 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md border-t border-gray-200 dark:border-neutral-800 px-4 py-3 shadow-lg">
+            <div className="flex items-center gap-2 max-w-7xl mx-auto">
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => addField()}
+                  className="shrink-0 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-all flex items-center gap-1 shadow-sm"
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Field
+                </button>
+              )}
+              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none flex-1">
+                {fields.length === 0 && (
+                  <span className="text-xs text-gray-400 italic px-2">No fields yet. Right-click the PDF or click Add Field.</span>
+                )}
+                {fields.map((f) => {
+                  const c = FIELD_COLORS[f.field_type] || FIELD_COLORS.other;
+                  const isSel = selectedId === f.id;
+                  return (
+                    <div
+                      key={f.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => openFieldEdit(f.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') openFieldEdit(f.id);
+                      }}
+                      className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${isSel ? 'text-white shadow-sm' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}`}
+                      style={{ backgroundColor: isSel ? c.border : c.bg, border: `1px solid ${c.border}` }}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${isSel ? 'bg-white/70' : ''}`}
+                        style={{ backgroundColor: isSel ? 'rgba(255,255,255,0.7)' : c.border }}
+                      />
+                      {f.label || f.field_type}
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); removeField(f.id); }}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); removeField(f.id); } }}
+                          className={`p-0.5 rounded cursor-pointer ${isSel ? 'hover:bg-white/20' : 'hover:bg-gray-200 dark:hover:bg-neutral-700'}`}
+                        >
+                          <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
