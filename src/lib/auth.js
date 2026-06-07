@@ -44,10 +44,11 @@ function genToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
-const SEED_EMAIL = 'hello@keystonestemai.org';
-const SEED_PASSWORD = 'Keystone#2026$';
+const SEED_EMAIL = process.env.SEED_ADMIN_EMAIL || 'hello@keystonestemai.org';
+const SEED_PASSWORD = process.env.SEED_ADMIN_PASSWORD;
 
 export async function seedAdminUser() {
+  if (!SEED_PASSWORD) return;
   const existing = await findUserByEmail(SEED_EMAIL);
   if (existing) return;
   await createUser({

@@ -328,7 +328,7 @@ export async function updateUser(id, updates) {
       const sets = keys.map((k, i) => `${k} = $${i + 1}`);
       const values = keys.map((k) => updates[k]);
       values.push(id);
-      await client.sql.query(
+      await client.query(
         `UPDATE users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${keys.length + 1}`,
         values,
       );
