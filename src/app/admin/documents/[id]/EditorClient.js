@@ -558,15 +558,33 @@ function CtxFieldEditor({
                     >
                       Auto-sign name
                     </label>
-                    <input
+                    <select
                       id="field-signature-name"
-                      type="text"
                       value={f.signature_name || ''}
                       onChange={(e) => updateField({ ...f, signature_name: e.target.value })}
-                      placeholder="Leave blank to use signer's name"
-                      className="w-full px-2 py-1.5 bg-neutral-800 border border-neutral-700 rounded-lg text-xs text-neutral-200 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-neutral-500"
+                      className="w-full px-2 py-1.5 bg-neutral-800 border border-neutral-700 rounded-lg text-xs text-neutral-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       disabled={!canEdit}
-                    />
+                    >
+                      <option value="">Signer's own name</option>
+                      {fields
+                        .filter((sf) => sf.id !== f.id)
+                        .map((sf) => (
+                          <option key={sf.id} value={sf.id}>
+                            {sf.label || sf.field_type} ({sf.field_type})
+                          </option>
+                        ))}
+                      <option value="__custom__">Custom text...</option>
+                    </select>
+                    {f.signature_name === '__custom__' && (
+                      <input
+                        type="text"
+                        value={f.signature_custom_text || ''}
+                        onChange={(e) => updateField({ ...f, signature_custom_text: e.target.value })}
+                        placeholder="Type a name"
+                        className="w-full mt-1 px-2 py-1.5 bg-neutral-800 border border-neutral-700 rounded-lg text-xs text-neutral-200 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-neutral-500"
+                        disabled={!canEdit}
+                      />
+                    )}
                   </div>
                 </>
               )}

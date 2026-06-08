@@ -86,12 +86,12 @@ function FieldOverlay({
     const autoDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     return (
       <div
-        className="absolute pointer-events-none flex items-center opacity-60"
+        className="absolute pointer-events-none flex items-center"
         style={{
           ...containerStyle,
           fontSize: `${fs * scale}px`,
           fontWeight: 500,
-          color: '#d4d4d4',
+          color: '#1a1a1a',
         }}
       >
         {autoDate}
@@ -104,8 +104,8 @@ function FieldOverlay({
       const d = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       return (
         <div
-          className="absolute flex items-center opacity-60"
-          style={{ ...containerStyle, fontSize: `${fs * scale}px`, fontWeight: 500, color: '#d4d4d4' }}
+          className="absolute flex items-center"
+          style={{ ...containerStyle, fontSize: `${fs * scale}px`, fontWeight: 500, color: '#1a1a1a' }}
         >
           {d}
         </div>
@@ -120,7 +120,7 @@ function FieldOverlay({
           </div>
         )}
         {!isSig && (
-          <div className="px-2 py-1 text-neutral-100" style={{ fontSize: `${Math.max(12, fs * scale)}px` }}>
+          <div className="px-2 py-1 text-gray-900" style={{ fontSize: `${Math.max(12, fs * scale)}px` }}>
             {val}
           </div>
         )}
@@ -207,7 +207,7 @@ function FieldOverlay({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') onActivate(f.id);
               }}
-              className={`w-full text-left px-2 py-1 rounded-lg transition-all duration-200 cursor-pointer ${fieldErrors?.[f.id] ? 'bg-red-900/30 border-2 border-red-700 text-red-300' : isFilled ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-neutral-100' : 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-dashed border-yellow-300 dark:border-yellow-700 hover:border-yellow-500 text-neutral-400'}`}
+              className={`w-full text-left px-2 py-1 rounded-lg transition-all duration-200 cursor-pointer ${fieldErrors?.[f.id] ? 'bg-red-50 border-2 border-red-300 text-red-700' : isFilled ? 'bg-green-50 border border-green-200 text-gray-900' : 'bg-yellow-50 border-2 border-dashed border-yellow-300 hover:border-yellow-500 text-gray-500'}`}
               style={{ fontSize: `${Math.max(12, fs * scale)}px` }}
             >
               {isFilled ? val : f.label || renderer.placeholder}
@@ -878,7 +878,12 @@ export default function DocumentSigner({ documentId }) {
             .map((f) => ({ id: f.id, label: f.label, value: fieldValues[f.id] || '' }))
             .filter((n) => n.value)}
           defaultMethod={fields.find((f) => f.id === sigPickerFieldId)?.default_method}
-          signatureName={fields.find((f) => f.id === sigPickerFieldId)?.signature_name}
+          signatureName={(() => {
+            const sf = fields.find((f) => f.id === sigPickerFieldId);
+            if (!sf?.signature_name) return '';
+            if (sf.signature_name === '__custom__') return sf.signature_custom_text || '';
+            return fieldValues[sf.signature_name] || '';
+          })()}
           onSignature={handleSignature}
           onClose={() => {
             setSigPickerOpen(false);
