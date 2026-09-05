@@ -199,10 +199,17 @@ export async function saveDocumentFields(documentId, fields) {
     await client.sql`DELETE FROM document_fields WHERE document_id = ${documentId}`;
     for (let i = 0; i < fields.length; i++) {
       const f = fields[i];
-      await client.sql`
-        INSERT INTO document_fields (document_id, label, field_type, x, y, width, height, font_size, date_format, required, page_number, sort_order)
-        VALUES (${documentId}, ${f.label}, ${f.fieldType || f.field_type}, ${f.x}, ${f.y}, ${f.width}, ${f.height}, ${f.font_size || f.fontSize || null}, ${f.date_format || null}, ${f.required !== false}, ${f.page_number || 0}, ${i})
-      `;
+      if (f.id) {
+        await client.sql`
+          INSERT INTO document_fields (id, document_id, label, field_type, x, y, width, height, font_size, date_format, required, page_number, sort_order)
+          VALUES (${f.id}, ${documentId}, ${f.label}, ${f.fieldType || f.field_type}, ${f.x}, ${f.y}, ${f.width}, ${f.height}, ${f.font_size || f.fontSize || null}, ${f.date_format || null}, ${f.required !== false}, ${f.page_number || 0}, ${i})
+        `;
+      } else {
+        await client.sql`
+          INSERT INTO document_fields (document_id, label, field_type, x, y, width, height, font_size, date_format, required, page_number, sort_order)
+          VALUES (${documentId}, ${f.label}, ${f.fieldType || f.field_type}, ${f.x}, ${f.y}, ${f.width}, ${f.height}, ${f.font_size || f.fontSize || null}, ${f.date_format || null}, ${f.required !== false}, ${f.page_number || 0}, ${i})
+        `;
+      }
     }
   });
 }

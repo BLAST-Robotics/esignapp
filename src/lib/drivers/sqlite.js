@@ -189,7 +189,7 @@ export async function saveDocumentFields(documentId, fields) {
   for (let i = 0; i < fields.length; i++) {
     const f = fields[i];
     stmt.run(
-      uuidv4(),
+      f.id || uuidv4(),
       documentId,
       f.label,
       f.fieldType || f.field_type,
