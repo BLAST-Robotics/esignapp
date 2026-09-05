@@ -7,10 +7,14 @@ export async function GET(_request, { params }) {
     if (!doc) return Response.json({ error: 'Not found' }, { status: 404 });
     const file = await getDocumentFile(id);
     if (!file) return Response.json({ error: 'File not found' }, { status: 404 });
-    return new Response(file.data, {
+    const buf = file.data;
+    return new Response(buf, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="${doc.filename}"`,
+        'Content-Length': String(buf?.length ?? buf?.byteLength ?? 0),
+        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+        'Accept-Ranges': 'bytes',
       },
     });
   } catch (error) {

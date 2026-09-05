@@ -1,4 +1,5 @@
 import { deleteUserById, requireAdmin, updateUser } from '@/lib/auth';
+import { validateAdminUserUpdate } from '@/lib/validation';
 
 const ALLOWED_UPDATES = new Set(['name', 'email', 'role', 'password']);
 
@@ -8,6 +9,8 @@ export async function PUT(request, { params }) {
     const user = await requireAdmin(request);
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await request.json();
+    const err = validateAdminUserUpdate(body);
+    if (err) return Response.json({ error: err }, { status: 400 });
     const filtered = {};
     for (const k of ALLOWED_UPDATES) {
       if (k in body) filtered[k] = body[k];
@@ -15,6 +18,7 @@ export async function PUT(request, { params }) {
     if (Object.keys(filtered).length === 0) {
       return Response.json({ error: 'No valid fields to update' }, { status: 400 });
     }
+    if (filtered.email) filtered.email = filtered.email.trim().toLowerCase();
     await updateUser(id, filtered);
     return Response.json({ success: true });
   } catch (error) {

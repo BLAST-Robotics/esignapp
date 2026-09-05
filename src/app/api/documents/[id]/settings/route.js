@@ -1,5 +1,6 @@
 import { requireAuth } from '@/lib/auth';
 import { getDocument, getDocumentSettings, updateDocumentSettings } from '@/lib/storage';
+import { validateDocumentSettings } from '@/lib/validation';
 
 function canManage(document, user) {
   if (!document || !user) return false;
@@ -33,6 +34,8 @@ export async function PUT(request, { params }) {
     if (!doc) return Response.json({ error: 'Not found' }, { status: 404 });
     if (!canManage(doc, user)) return Response.json({ error: 'Forbidden' }, { status: 403 });
     const body = await request.json();
+    const err = validateDocumentSettings(body);
+    if (err) return Response.json({ error: err }, { status: 400 });
     await updateDocumentSettings(id, body);
     return Response.json({ success: true });
   } catch (error) {

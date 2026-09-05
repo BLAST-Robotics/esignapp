@@ -1,5 +1,6 @@
 import { requireAuth } from '@/lib/auth';
 import { deleteSignature, getSignature, updateSignature } from '@/lib/storage';
+import { validateSignatureUpdate } from '@/lib/validation';
 
 export async function GET(request, { params }) {
   const user = await requireAuth(request);
@@ -21,7 +22,10 @@ export async function PUT(request, { params }) {
   const { id } = await params;
   try {
     const body = await request.json();
-    await updateSignature(id, body);
+    const err = validateSignatureUpdate(body);
+    if (err) return Response.json({ error: err }, { status: 400 });
+    const fv = body.fieldValues !== undefined ? body.fieldValues : body.field_values;
+    await updateSignature(id, { fieldValues: fv });
     return Response.json({ success: true });
   } catch (error) {
     console.error('Update signature error:', error);

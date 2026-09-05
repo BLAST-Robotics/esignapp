@@ -7,6 +7,7 @@ import {
   setPermission,
 } from '@/lib/auth';
 import { getDocument } from '@/lib/storage';
+import { validatePermissionRequest } from '@/lib/validation';
 
 export async function GET(request, { params }) {
   const { id } = await params;
@@ -35,10 +36,10 @@ export async function POST(request, { params }) {
     if (!doc) return Response.json({ error: 'Not found' }, { status: 404 });
     if (doc.user_id !== user.userId && user.role !== 'admin')
       return Response.json({ error: 'Forbidden' }, { status: 403 });
-    const { email, permission } = await request.json();
-    if (!email || !permission) return Response.json({ error: 'Email and permission required' }, { status: 400 });
-    if (!['view', 'edit', 'manage'].includes(permission))
-      return Response.json({ error: 'Invalid permission' }, { status: 400 });
+    const body = await request.json();
+    const permErr = validatePermissionRequest(body);
+    if (permErr) return Response.json({ error: permErr }, { status: 400 });
+    const { email, permission } = body;
 
     const targetUser = await findUserByEmail(email);
     if (!targetUser) return Response.json({ error: 'User not found' }, { status: 404 });

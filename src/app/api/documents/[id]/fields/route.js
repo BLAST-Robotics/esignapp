@@ -1,5 +1,6 @@
 import { requireAuth } from '@/lib/auth';
 import { getDocument, saveDocumentFields, updateDocument } from '@/lib/storage';
+import { validateFieldsArray } from '@/lib/validation';
 
 export async function PUT(request, { params }) {
   const user = await requireAuth(request);
@@ -9,8 +10,9 @@ export async function PUT(request, { params }) {
     const doc = await getDocument(id);
     if (!doc) return Response.json({ error: 'Not found' }, { status: 404 });
     const { fields } = await request.json();
-    if (!Array.isArray(fields)) {
-      return Response.json({ error: 'fields must be an array' }, { status: 400 });
+    const fieldErr = validateFieldsArray(fields);
+    if (fieldErr) {
+      return Response.json({ error: fieldErr }, { status: 400 });
     }
     await saveDocumentFields(id, fields);
     await updateDocument(id, { status: 'active' });

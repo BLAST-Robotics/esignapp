@@ -1,8 +1,10 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useState } from 'react';
-import SignatureChart from '@/components/SignatureChart';
 import ThemeToggle from '@/components/ThemeToggle';
+
+const SignatureChart = dynamic(() => import('@/components/SignatureChart'), { ssr: false, loading: () => <div className="h-32 animate-pulse bg-gray-100 dark:bg-neutral-800 rounded-xl" /> });
 
 function toLocalISO(d) {
   const pad = (n) => String(n).padStart(2, '0');
@@ -334,7 +336,7 @@ export default function AdminClient() {
     );
   }
 
-  const totalSignatures = documents.reduce((sum, d) => sum + (d.signature_count || 0), 0);
+  const totalSignatures = allSignatures.length;
   const activeDocs = documents.filter((d) => d.status === 'active').length;
 
   return (

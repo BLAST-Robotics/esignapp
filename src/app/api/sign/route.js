@@ -1,5 +1,6 @@
 import { headers } from 'next/headers';
 import { getDocument, getSignatures, initTable, insertSignature } from '@/lib/storage';
+import { validateSignRequest } from '@/lib/validation';
 
 const submitAttempts = new Map();
 function rateLimit(ip) {
@@ -45,8 +46,13 @@ function parseIPs(forwardedFor) {
   return { ipv4, ipv6 };
 }
 
+const locationCache = new Map();
+const LOCATION_TTL = 5 * 60 * 1000;
+
 async function fetchLocation(ip) {
   if (!ip || ip === 'unknown' || ip === '127.0.0.1' || ip === '::1') return null;
+  const cached = locationCache.get(ip);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
@@ -55,7 +61,13 @@ async function fetchLocation(ip) {
     if (!res.ok) return null;
     const data = await res.json();
     if (data.error) return null;
-    return JSON.stringify({ city: data.city, region: data.region, country: data.country_name, org: data.org });
+    const value = JSON.stringify({ city: data.city, region: data.region, country: data.country_name, org: data.org });
+    locationCache.set(ip, { value, expiresAt: Date.now() + LOCATION_TTL });
+    if (locationCache.size > 500) {
+      const firstKey = locationCache.keys().next().value;
+      locationCache.delete(firstKey);
+    }
+    return value;
   } catch {
     return null;
   }
@@ -70,11 +82,12 @@ export async function POST(request) {
     }
 
     await initTable();
-    const { documentId, fieldValues, signerEmail } = await request.json();
-
-    if (!documentId || typeof fieldValues !== 'object') {
-      return Response.json({ error: 'documentId and fieldValues are required.' }, { status: 400 });
+    const body = await request.json();
+    const validation = validateSignRequest(body);
+    if (!validation.ok) {
+      return Response.json({ error: validation.error }, { status: validation.status });
     }
+    const { documentId, fieldValues, signerEmail } = body;
 
     const doc = await getDocument(documentId);
     if (!doc) {

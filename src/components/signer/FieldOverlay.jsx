@@ -1,0 +1,221 @@
+'use client';
+
+import { memo, useState } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { DATE_FORMAT_TO_PICKER, FIELD_RENDERERS, formatDateTo, isManualDate, parseDateValue, toISO } from './constants';
+
+function FieldOverlayInner({
+  field,
+  scale,
+  activeField,
+  fieldValues,
+  fieldErrors,
+  onActivate,
+  onUpdate,
+  onOpenSignature,
+  onRemoveSignature,
+  readOnly,
+}) {
+  const f = field || {};
+  const isSig = f.field_type === 'signature';
+  const val = fieldValues[f.id] || '';
+  const isFilled = !!val;
+  const w = f.width || 200;
+  const h = f.field_type === 'date' ? (f.font_size || 16) * 1.5 : f.height || 40;
+  const fs = f.font_size || 12;
+  const renderer = FIELD_RENDERERS[f.field_type] || FIELD_RENDERERS.other;
+
+  const [dateOpen, setDateOpen] = useState(false);
+
+  const containerStyle = {
+    left: `${(f.x || 0) * scale}px`,
+    top: `${(f.y || 0) * scale}px`,
+    width: `${w * scale}px`,
+    zIndex: activeField === f.id && !readOnly ? 50 : 10,
+  };
+
+  if (f.field_type === 'date' && !readOnly && f.date_format?.startsWith('signing')) {
+    const autoDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    return (
+      <div
+        className="absolute pointer-events-none flex items-center"
+        style={{ ...containerStyle, fontSize: `${fs * scale}px`, fontWeight: 500, color: '#1a1a1a' }}
+      >
+        {autoDate}
+      </div>
+    );
+  }
+
+  if (readOnly) {
+    if (f.field_type === 'date' && f.date_format?.startsWith('signing')) {
+      const d = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      return (
+        <div
+          className="absolute flex items-center"
+          style={{ ...containerStyle, fontSize: `${fs * scale}px`, fontWeight: 500, color: '#1a1a1a' }}
+        >
+          {d}
+        </div>
+      );
+    }
+    if (!isFilled) return null;
+    return (
+      <div className="absolute transition-all duration-300 ease-out" style={containerStyle}>
+        {isSig && (
+          <div style={{ height: `${h * scale}px` }}>
+            <img src={val} alt="Signature" className="w-full h-full object-contain" />
+          </div>
+        )}
+        {!isSig && (
+          <div className="px-2 py-1 text-gray-900" style={{ fontSize: `${Math.max(12, fs * scale)}px` }}>
+            {val}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="absolute transition-all duration-300 ease-out" style={containerStyle}>
+      {isSig && (
+        <button
+          type="button"
+          onClick={() => {
+            if (!val) onOpenSignature(f.id);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              if (!val) onOpenSignature(f.id);
+            }
+          }}
+          className={`relative w-full rounded-lg transition-all duration-300 ${val ? 'bg-transparent border-0' : 'bg-blue-50 dark:bg-blue-900/20 border-2 border-dashed border-blue-300 dark:border-blue-700 hover:border-blue-500 cursor-pointer'}`}
+          style={{ height: `${h * scale}px` }}
+        >
+          {val ? (
+            <div className="relative w-full h-full">
+              <div className="absolute inset-0 rounded-lg overflow-hidden">
+                <img src={val} alt="Signature" className="w-full h-full object-contain" />
+              </div>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemoveSignature(f.id);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                    onRemoveSignature(f.id);
+                  }
+                }}
+                className="absolute -top-2.5 -right-2.5 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-md z-20 cursor-pointer"
+                title="Remove signature"
+              >
+                <svg
+                  aria-hidden="true"
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-full text-blue-300 text-xs font-medium">
+              {renderer.placeholder}
+            </div>
+          )}
+        </button>
+      )}
+
+      {!isSig &&
+        (activeField === f.id ? (
+          <div>
+            {(() => {
+              if (isManualDate(f)) {
+                const selRaw = parseDateValue(val, f.date_format);
+                const selectedDate = selRaw ? new Date(`${selRaw}T00:00:00`) : null;
+                return (
+                  <DatePicker
+                    open={dateOpen}
+                    selected={selectedDate}
+                    portalId="datepicker-portal"
+                    popperPlacement="bottom"
+                    showPopperArrow={false}
+                    popperProps={{ strategy: 'fixed' }}
+                    popperClassName="!z-[70]"
+                    autoComplete="off"
+                    dateFormat={DATE_FORMAT_TO_PICKER[f.date_format] || 'MMMM d, yyyy'}
+                    placeholderText={renderer.placeholder}
+                    onCalendarOpen={() => setDateOpen(true)}
+                    onCalendarClose={() => setDateOpen(false)}
+                    onChange={(d) => {
+                      onUpdate(f.id, d ? formatDateTo(toISO(d), f.date_format) : '');
+                    }}
+                    customInput={
+                      <input
+                        type="text"
+                        className={`w-full px-2 py-1 border-2 rounded-lg text-sm bg-white text-gray-900 shadow-lg outline-none transition-all duration-200 ${fieldErrors?.[f.id] ? 'border-red-500' : 'border-blue-500'}`}
+                        style={{ fontSize: `${Math.max(12, fs * scale)}px` }}
+                      />
+                    }
+                  />
+                );
+              }
+              return (
+                <input
+                  type={f.field_type === 'email' ? 'email' : f.field_type === 'phone' ? 'tel' : 'text'}
+                  value={val}
+                  onChange={(e) => onUpdate(f.id, e.target.value)}
+                  onBlur={() => onActivate(null)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') onActivate(null);
+                  }}
+                  className={`w-full px-2 py-1 border-2 rounded-lg text-sm bg-white text-gray-900 shadow-lg outline-none transition-all duration-200 ${fieldErrors?.[f.id] ? 'border-red-500' : 'border-blue-500'}`}
+                  style={{ fontSize: `${Math.max(12, fs * scale)}px` }}
+                  placeholder={renderer.placeholder}
+                />
+              );
+            })()}
+            {fieldErrors?.[f.id] && (
+              <div className="text-red-500 text-xs mt-0.5" style={{ fontSize: `${Math.max(10, fs * scale * 0.8)}px` }}>
+                {fieldErrors[f.id]}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div>
+            <button
+              type="button"
+              onClick={() => {
+                onActivate(f.id);
+                if (isManualDate(f)) setDateOpen(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  onActivate(f.id);
+                  if (isManualDate(f)) setDateOpen(true);
+                }
+              }}
+              className={`w-full text-left px-2 py-1 rounded-lg transition-all duration-200 cursor-pointer ${fieldErrors?.[f.id] ? 'bg-red-50 border-2 border-red-300 text-red-700' : isFilled ? 'bg-green-50 border border-green-200 text-gray-900' : 'bg-yellow-50 border-2 border-dashed border-yellow-300 hover:border-yellow-500 text-gray-500'}`}
+              style={{ fontSize: `${Math.max(12, fs * scale)}px` }}
+            >
+              {isFilled ? val : f.label || renderer.placeholder}
+            </button>
+            {fieldErrors?.[f.id] && (
+              <div className="text-red-500 text-xs mt-0.5" style={{ fontSize: `${Math.max(10, fs * scale * 0.8)}px` }}>
+                {fieldErrors[f.id]}
+              </div>
+            )}
+          </div>
+        ))}
+     </div>
+  );
+}
+
+export default memo(FieldOverlayInner);

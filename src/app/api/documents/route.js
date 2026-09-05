@@ -1,4 +1,5 @@
 import { getAccessibleDocuments, requireAuth } from '@/lib/auth';
+import { compressPdfBuffer } from '@/lib/compressPdf';
 import { createDocument, getDocuments, initTable } from '@/lib/storage';
 
 const DOC_LIST_FIELDS = [
@@ -75,7 +76,9 @@ export async function POST(request) {
 
     const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
     const bytes = await file.arrayBuffer();
-    const fileBuffer = Buffer.from(bytes);
+    let fileBuffer = Buffer.from(bytes);
+    // compress on upload — reduces LCP/storage; no-op if not compressible
+    fileBuffer = await compressPdfBuffer(fileBuffer);
 
     const id = await createDocument({ title, filename, fileBuffer, userId: user.userId });
 

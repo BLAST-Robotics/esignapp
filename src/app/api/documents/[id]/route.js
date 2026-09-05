@@ -1,5 +1,6 @@
 import { requireAuth } from '@/lib/auth';
 import { deleteDocument, getDocument, updateDocument } from '@/lib/storage';
+import { validateDocumentUpdate } from '@/lib/validation';
 
 async function checkPerm(request, documentId, minLevel) {
   const user = await requireAuth(request);
@@ -59,7 +60,18 @@ export async function PUT(request, { params }) {
       return Response.json({ success: true });
     } else {
       const body = await request.json();
-      await updateDocument(id, body);
+      const err = validateDocumentUpdate(body);
+      if (err) {
+        return Response.json({ error: err }, { status: 400 });
+      }
+      // allowlist + normalize slug/collect_email
+      const filtered = {};
+      if ('title' in body) filtered.title = body.title.trim();
+      if ('slug' in body) filtered.slug = body.slug.trim().toLowerCase();
+      if ('collect_email' in body) filtered.collect_email = body.collect_email ? 1 : 0;
+      if ('status' in body) filtered.status = body.status;
+      if ('settings' in body) filtered.settings = body.settings;
+      await updateDocument(id, filtered);
       return Response.json({ success: true });
     }
   } catch (error) {
