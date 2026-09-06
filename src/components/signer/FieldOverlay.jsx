@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { DATE_FORMAT_TO_PICKER, FIELD_RENDERERS, formatDateTo, isManualDate, parseDateValue, toISO } from './constants';
@@ -27,6 +27,27 @@ function FieldOverlayInner({
   const renderer = FIELD_RENDERERS[f.field_type] || FIELD_RENDERERS.other;
 
   const [dateOpen, setDateOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)');
+    const onChange = () => setIsMobile(mq.matches);
+    onChange();
+    mq.addEventListener?.('change', onChange);
+    return () => mq.removeEventListener?.('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    if (!dateOpen) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setDateOpen(false);
+        onActivate?.(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [dateOpen, onActivate]);
 
   const containerStyle = {
     left: `${(f.x || 0) * scale}px`,
@@ -138,33 +159,88 @@ function FieldOverlayInner({
           <div>
             {(() => {
               if (isManualDate(f)) {
+                // Mobile: native OS picker — no overlay trap, swipe/esc built-in
+                if (isMobile) {
+                  const nativeValue = parseDateValue(val, f.date_format) || '';
+                  return (
+                    <input
+                      type="date"
+                      value={nativeValue}
+                      onChange={(e) => {
+                        const iso = e.target.value;
+                        onUpdate(f.id, iso ? formatDateTo(iso, f.date_format) : '');
+                      }}
+                      onBlur={() => onActivate(null)}
+                      className={`w-full px-2 py-1 border-2 rounded-lg text-sm bg-white text-gray-900 shadow-lg outline-none transition-all duration-200 ${fieldErrors?.[f.id] ? 'border-red-500' : 'border-blue-500'}`}
+                      style={{ fontSize: `${Math.max(12, fs * scale)}px` }}
+                    />
+                  );
+                }
                 const selRaw = parseDateValue(val, f.date_format);
                 const selectedDate = selRaw ? new Date(`${selRaw}T00:00:00`) : null;
                 return (
-                  <DatePicker
-                    open={dateOpen}
-                    selected={selectedDate}
-                    portalId="datepicker-portal"
-                    popperPlacement="bottom"
-                    showPopperArrow={false}
-                    popperProps={{ strategy: 'fixed' }}
-                    popperClassName="!z-[70]"
-                    autoComplete="off"
-                    dateFormat={DATE_FORMAT_TO_PICKER[f.date_format] || 'MMMM d, yyyy'}
-                    placeholderText={renderer.placeholder}
-                    onCalendarOpen={() => setDateOpen(true)}
-                    onCalendarClose={() => setDateOpen(false)}
-                    onChange={(d) => {
-                      onUpdate(f.id, d ? formatDateTo(toISO(d), f.date_format) : '');
-                    }}
-                    customInput={
-                      <input
-                        type="text"
-                        className={`w-full px-2 py-1 border-2 rounded-lg text-sm bg-white text-gray-900 shadow-lg outline-none transition-all duration-200 ${fieldErrors?.[f.id] ? 'border-red-500' : 'border-blue-500'}`}
-                        style={{ fontSize: `${Math.max(12, fs * scale)}px` }}
+                  <>
+                    {dateOpen && (
+                      <button
+                        type="button"
+                        aria-label="Close calendar"
+                        onClick={() => {
+                          setDateOpen(false);
+                          onActivate?.(null);
+                        }}
+                        className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[2px]"
                       />
-                    }
-                  />
+                    )}
+                    <DatePicker
+                      open={dateOpen}
+                      selected={selectedDate}
+                      portalId="datepicker-portal"
+                      popperPlacement="bottom"
+                      showPopperArrow={false}
+                      popperProps={{ strategy: 'fixed' }}
+                      popperClassName="!z-[70]"
+                      autoComplete="off"
+                      shouldCloseOnSelect
+                      dateFormat={DATE_FORMAT_TO_PICKER[f.date_format] || 'MMMM d, yyyy'}
+                      placeholderText={renderer.placeholder}
+                      onCalendarOpen={() => setDateOpen(true)}
+                      onCalendarClose={() => setDateOpen(false)}
+                      onChange={(d) => {
+                        onUpdate(f.id, d ? formatDateTo(toISO(d), f.date_format) : '');
+                        setDateOpen(false);
+                        onActivate?.(null);
+                      }}
+                      onClickOutside={() => {
+                        setDateOpen(false);
+                        onActivate?.(null);
+                      }}
+                      calendarContainer={({ children }) => (
+                        <div className="relative bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden">
+                          <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-neutral-700 sm:hidden">
+                            <span className="text-sm font-medium text-gray-700 dark:text-neutral-200">Select date</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDateOpen(false);
+                                onActivate?.(null);
+                              }}
+                              className="px-3 py-1 text-sm font-medium text-gray-600 dark:text-neutral-300 bg-gray-100 dark:bg-neutral-700 rounded-lg hover:bg-gray-200 dark:hover:bg-neutral-600"
+                            >
+                              Done
+                            </button>
+                          </div>
+                          <div className="bg-white dark:bg-neutral-900">{children}</div>
+                        </div>
+                      )}
+                      customInput={
+                        <input
+                          type="text"
+                          className={`w-full px-2 py-1 border-2 rounded-lg text-sm bg-white text-gray-900 shadow-lg outline-none transition-all duration-200 ${fieldErrors?.[f.id] ? 'border-red-500' : 'border-blue-500'}`}
+                          style={{ fontSize: `${Math.max(12, fs * scale)}px` }}
+                        />
+                      }
+                    />
+                  </>
                 );
               }
               return (
@@ -190,18 +266,18 @@ function FieldOverlayInner({
           </div>
         ) : (
           <div>
-            <button
-              type="button"
-              onClick={() => {
-                onActivate(f.id);
-                if (isManualDate(f)) setDateOpen(true);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+              <button
+                type="button"
+                onClick={() => {
                   onActivate(f.id);
-                  if (isManualDate(f)) setDateOpen(true);
-                }
-              }}
+                  if (isManualDate(f) && !window.matchMedia('(max-width: 640px)').matches) setDateOpen(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    onActivate(f.id);
+                    if (isManualDate(f) && !window.matchMedia('(max-width: 640px)').matches) setDateOpen(true);
+                  }
+                }}
               className={`w-full text-left px-2 py-1 rounded-lg transition-all duration-200 cursor-pointer ${fieldErrors?.[f.id] ? 'bg-red-50 border-2 border-red-300 text-red-700' : isFilled ? 'bg-green-50 border border-green-200 text-gray-900' : 'bg-yellow-50 border-2 border-dashed border-yellow-300 hover:border-yellow-500 text-gray-500'}`}
               style={{ fontSize: `${Math.max(12, fs * scale)}px` }}
             >

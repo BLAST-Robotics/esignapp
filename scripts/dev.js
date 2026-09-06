@@ -141,7 +141,7 @@ async function main() {
   console.log(`  ${divider}\n`);
 
   // ─── Dev server (foreground) ─────────────────────
-  const dev = spawn('bun', ['run', 'next', 'dev', '--port', '80'], {
+  const dev = spawn('bun', ['run', 'next', 'dev', '--port', '80', '-H', '0.0.0.0'], {
     env: { ...process.env },
     shell: true,
     stdio: 'inherit',
